@@ -1,0 +1,25 @@
+# .github/workflows/release.yaml
+
+on:
+  release:
+    types: [ created ]
+
+jobs:
+  releases-matrix:
+    name: Release Go Binary
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [ windows, linux ]
+        goarch: [ "386", amd64 ]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: wangyoucao577/go-release-action@v1.33
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          goos: ${{ matrix.goos }}
+          goarch: ${{ matrix.goarch }}
+          goversion: 1.18
+          project_path: cmd/dumbspy
+          extra_files: config.example.yaml
+          sha256sum: true
