@@ -100,7 +100,7 @@ func handleRequest(conn net.Conn) {
 	}
 
 	log.Debug().
-		Bytes("response", buffer[:n]).
+		Bytes("data", buffer[:n]).
 		Msg("Received login request")
 	req, err := packet.FromString(string(buffer[:n]))
 	if err != nil {
