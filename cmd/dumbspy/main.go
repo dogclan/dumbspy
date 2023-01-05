@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"time"
 
-	"cetteup/dumbspy/internal"
-	"cetteup/dumbspy/pkg/packet"
+	"dogclan/dumbspy/internal"
+	"dogclan/dumbspy/pkg/packet"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"

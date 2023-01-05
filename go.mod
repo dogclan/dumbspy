@@ -1,4 +1,4 @@
-module cetteup/dumbspy
+module dogclan/dumbspy
 
 go 1.19
 
