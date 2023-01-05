@@ -18,7 +18,7 @@ import (
 
 const (
 	port    = 29900
-	network = "tcp"
+	network = "tcp4"
 )
 
 func init() {
