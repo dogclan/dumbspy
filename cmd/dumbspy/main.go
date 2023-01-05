@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"strconv"
@@ -95,6 +97,19 @@ func handleRequest(conn net.Conn) {
 	buffer := make([]byte, 512)
 	n, err := conn.Read(buffer)
 	if err != nil {
+		// EOF and timeout errors are not of interest => only log to debug and return
+		if errors.Is(err, io.EOF) {
+			log.Debug().
+				Err(err).
+				Msg("Peer closed connection while reading login request")
+			return
+		}
+		if e, ok := err.(net.Error); ok && e.Timeout() {
+			log.Debug().
+				Err(err).
+				Msg("Timed out reading login request")
+			return
+		}
 		log.Error().Err(err).Msg("Failed to read login request")
 		return
 	}
