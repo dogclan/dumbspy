@@ -20,7 +20,7 @@ const (
 )
 
 func init() {
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout})
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout, NoColor: true})
 
 	var err error
 	config, err = internal.LoadConfig()
