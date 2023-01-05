@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/npat-efault/crc16"
+	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -18,21 +19,45 @@ var (
 		FinVal: 0x0,
 		BigEnd: true,
 	}
-	nextPlayerID = 500000000
-	players      = map[string]int{}
+	basePlayerID = 500000000
+	players      = map[int]string{}
 )
 
-func ComputeChecksum(p string) string {
-	return strconv.Itoa(int(crc16.Checksum(conf, []byte(p))))
+func ComputeCRC16Str(p string) string {
+	return strconv.Itoa(ComputeCRC16Int(p))
 }
 
-func GetPlayerID(nick, passwordHash string) int {
-	key := fmt.Sprintf("%s:%s", nick, passwordHash)
-	playerID, ok := players[key]
+func ComputeCRC16Int(p string) int {
+	return int(crc16.Checksum(conf, []byte(p)))
+}
+
+func ComputeMD5(p string) string {
+	digest := md5.New()
+	digest.Write([]byte(p))
+	return fmt.Sprintf("%x", digest.Sum(nil))
+}
+
+func GetPlayerID(nick, productID, gameName, namespaceID, sdkRevision string) int {
+	// Compute hash of all unique/constant attributes in a login request
+	hash := ComputeMD5(strings.Join([]string{nick, productID, gameName, namespaceID, sdkRevision}, ":"))
+	playerID := basePlayerID + ComputeCRC16Int(hash)
+
+	existingHash, ok := players[playerID]
 	if !ok {
-		playerID = nextPlayerID
-		nextPlayerID += 1
-		players[key] = playerID
+		players[playerID] = hash
+	} else if existingHash != hash {
+		log.Warn().
+			Str("nick", nick).
+			Str("productID", productID).
+			Msg("Player hash mismatch, assigning random player id")
+
+		// A *different* random player id will be assigned for each collision with the same hash. A player who's
+		// hash is colliding will thus receive a different player id each time they log in. However, collisions should
+		// be rare in reality and the id is unique for the running duration of the dumbspy process.
+		for ok {
+			playerID = basePlayerID - rand.Intn(10000)
+			_, ok = players[playerID]
+		}
 	}
 
 	return playerID
@@ -46,9 +71,7 @@ func GenerateProof(nick, passwordHash, c1, c2 string) string {
 	b.WriteString(c2)
 	b.WriteString(passwordHash)
 
-	digest := md5.New()
-	digest.Write([]byte(b.String()))
-	return fmt.Sprintf("%x", digest.Sum(nil))
+	return ComputeMD5(b.String())
 }
 
 func RandString(n int) string {

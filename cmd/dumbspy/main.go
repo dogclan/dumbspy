@@ -138,9 +138,15 @@ func handleRequest(conn net.Conn) {
 			Bytes("data", res.Bytes()).
 			Msg("Sending error response")
 	} else {
-		playerID := internal.GetPlayerID(login.UniqueNick, login.Response)
+		playerID := internal.GetPlayerID(
+			login.UniqueNick,
+			login.ProductID,
+			login.GameName,
+			login.NamespaceID,
+			login.SDKRevision,
+		)
 		res.Write("lc", "2")
-		res.Write("sesskey", internal.ComputeChecksum(login.UniqueNick))
+		res.Write("sesskey", internal.ComputeCRC16Str(login.UniqueNick))
 		res.Write("proof", internal.GenerateProof(
 			login.UniqueNick,
 			login.Response,
