@@ -5,9 +5,21 @@ on:
     types: [ created ]
 
 jobs:
-  releases-matrix:
+  meta:
+    runs-on: ubuntu-latest
+    outputs:
+      date: ${{ steps.meta.outputs.date }}
+    steps:
+      - name: Prepare release meta
+        id: meta
+        run: |
+          echo "::set-output name=date::$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+  release-bin:
     name: Release Go Binary
     runs-on: ubuntu-latest
+    needs:
+      - meta
     strategy:
       matrix:
         goos: [ windows, linux ]
@@ -21,5 +33,5 @@ jobs:
           goarch: ${{ matrix.goarch }}
           goversion: 1.19
           project_path: cmd/dumbspy
-          extra_files: config.example.yaml
+          ldflags: "-X 'main.buildTime=${{ needs.meta.outputs.date }}' -X 'main.buildCommit=${{ github.sha }}' -X 'main.buildVersion=${{ github.ref_name }}'"
           sha256sum: true
