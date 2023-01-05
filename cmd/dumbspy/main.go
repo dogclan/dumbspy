@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"dogclan/dumbspy/cmd/dumbspy/internal/config"
 	"dogclan/dumbspy/internal"
 	"dogclan/dumbspy/pkg/packet"
 
@@ -17,35 +18,39 @@ import (
 )
 
 const (
-	port    = 29900
 	network = "tcp4"
 )
 
-func init() {
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout, NoColor: true})
-
-	var err error
-	config, err = internal.LoadConfig()
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to load config")
-	}
-
-	zerolog.SetGlobalLevel(config.LogLevel)
-}
-
 var (
-	config *internal.Config
+	buildVersion = "development"
+	buildCommit  = "uncommitted"
+	buildTime    = "unknown"
 )
 
 func main() {
-	listen, err := net.Listen(network, fmt.Sprintf("%s:%d", config.Host, port))
+	version := fmt.Sprintf("dumbspy %s (%s) built at %s", buildVersion, buildCommit, buildTime)
+	cfg := config.Init()
+
+	// Print version and exit
+	if cfg.Version {
+		fmt.Println(version)
+		os.Exit(0)
+	}
+
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout, NoColor: !cfg.ColorizeLogs})
+	if cfg.Debug {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	} else {
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	}
+
+	listen, err := net.Listen(network, cfg.ListenAddr)
 	if err != nil {
 		log.Fatal().Err(err).Msgf("Failed to start listener")
 	}
 
 	log.Info().
-		Str("host", config.Host).
-		Int("port", port).
+		Str("address", cfg.ListenAddr).
 		Msg("Listening for connections")
 
 	// close listener
