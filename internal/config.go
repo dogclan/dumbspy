@@ -14,7 +14,7 @@ const (
 
 type Config struct {
 	Host     string        `yaml:"host"`
-	LogLevel zerolog.Level `yaml:"log_level"`
+	LogLevel zerolog.Level `yaml:"logLevel"`
 }
 
 func LoadConfig() (*Config, error) {
