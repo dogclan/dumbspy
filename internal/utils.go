@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/npat-efault/crc16"
 	"github.com/rs/zerolog/log"
@@ -21,6 +22,7 @@ var (
 	}
 	basePlayerID = 500000000
 	players      = map[int]string{}
+	playersMutex = sync.RWMutex{}
 )
 
 func ComputeCRC16Str(p string) string {
@@ -41,6 +43,10 @@ func GetPlayerID(nick, productID, gameName, namespaceID, sdkRevision string) int
 	// Compute hash of all unique/constant attributes in a login request
 	hash := ComputeMD5(strings.Join([]string{nick, productID, gameName, namespaceID, sdkRevision}, ":"))
 	playerID := basePlayerID + ComputeCRC16Int(hash)
+
+	// Lock and unlock players map to prevent concurrent access
+	playersMutex.Lock()
+	defer playersMutex.Unlock()
 
 	existingHash, ok := players[playerID]
 	if !ok {
