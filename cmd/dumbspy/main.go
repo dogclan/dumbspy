@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"net"
 	"os"
 	"strconv"
@@ -26,6 +27,10 @@ var (
 	buildCommit  = "uncommitted"
 	buildTime    = "unknown"
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 func main() {
 	version := fmt.Sprintf("dumbspy %s (%s) built at %s", buildVersion, buildCommit, buildTime)
