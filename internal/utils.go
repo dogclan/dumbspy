@@ -12,6 +12,12 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+const (
+	asciiFirstNumber          = 48
+	asciiFirstUpperCaseLetter = 65
+	asciiFirstLowerCaseLetter = 97
+)
+
 var (
 	conf = &crc16.Conf{
 		Poly:   0x8005,
@@ -83,7 +89,17 @@ func GenerateProof(nick, passwordHash, c1, c2 string) string {
 func RandString(n int) string {
 	data := make([]byte, n)
 	for i := 0; i < n; i++ {
-		data[i] = byte(65 + rand.Intn(25))
+		t := rand.Intn(3)
+		var c int
+		switch t {
+		case 1:
+			c = asciiFirstLowerCaseLetter + rand.Intn(25) // lower case letter
+		case 2:
+			c = asciiFirstNumber + rand.Intn(9) // number
+		default:
+			c = asciiFirstUpperCaseLetter + rand.Intn(25) // upper case letter
+		}
+		data[i] = byte(c)
 	}
 	return string(data)
 }
