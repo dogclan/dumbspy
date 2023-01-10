@@ -10,7 +10,7 @@ type GamespyLoginRequest struct {
 	Login       *string `validate:"len=0,required"` // Key only, must be empty
 	Challenge   string  `validate:"len=32,required"`
 	UniqueNick  string  `validate:"min=1,required"`
-	Response    string  `validate:"md5,required"` // Password hash
+	Response    string  `validate:"md5,required"`
 	Port        string  `validate:"numeric,required"`
 	ProductID   string  `validate:"numeric,required"`
 	GameName    string  `validate:"min=1,required"`

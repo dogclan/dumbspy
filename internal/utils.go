@@ -75,13 +75,13 @@ func GetPlayerID(nick, productID, gameName, namespaceID, sdkRevision string) int
 	return playerID
 }
 
-func GenerateProof(nick, passwordHash, c1, c2 string) string {
+func GenerateProof(nick, response, c1, c2 string) string {
 	var b strings.Builder
 	b.WriteString(strings.Repeat(" ", 48))
 	b.WriteString(nick)
 	b.WriteString(c1)
 	b.WriteString(c2)
-	b.WriteString(passwordHash)
+	b.WriteString(response)
 
 	return ComputeMD5(b.String())
 }
