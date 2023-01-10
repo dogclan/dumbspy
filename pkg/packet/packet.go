@@ -27,8 +27,13 @@ func FromString(raw string) (*GamespyPacket, error) {
 	if !strings.HasPrefix(raw, "\\") || !strings.HasSuffix(raw, "\\final\\") {
 		return nil, fmt.Errorf("gamespy packet string is malformed")
 	}
-	packet := NewGamespyPacket()
+
 	elements := strings.Split(raw[1:len(raw)-7], "\\")
+	if len(elements)%2 != 0 {
+		return nil, fmt.Errorf("gamespy packet string contains key without corresponding value")
+	}
+
+	packet := NewGamespyPacket()
 	for i := 0; i < len(elements); i += 2 {
 		packet.Write(elements[i], elements[i+1])
 	}

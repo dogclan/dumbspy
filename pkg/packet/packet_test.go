@@ -9,10 +9,10 @@ import (
 
 func TestFromString(t *testing.T) {
 	type test struct {
-		name           string
-		raw            string
-		expectedPacket *GamespyPacket
-		wantErr        bool
+		name            string
+		raw             string
+		expectedPacket  *GamespyPacket
+		wantErrContains string
 	}
 
 	tests := []test{
@@ -35,7 +35,6 @@ func TestFromString(t *testing.T) {
 					},
 				},
 			},
-			wantErr: false,
 		},
 		{
 			name: "parses login request packet",
@@ -126,14 +125,19 @@ func TestFromString(t *testing.T) {
 			},
 		},
 		{
-			name:    "error for packet not starting with \\",
-			raw:     "key\\value\\final\\",
-			wantErr: true,
+			name:            "error for packet not starting with \\",
+			raw:             "key\\value\\final\\",
+			wantErrContains: "gamespy packet string is malformed",
 		},
 		{
-			name:    "error for packet not ending with \\final\\",
-			raw:     "\\key\\value",
-			wantErr: true,
+			name:            "error for packet not ending with \\final\\",
+			raw:             "\\key\\value",
+			wantErrContains: "gamespy packet string is malformed",
+		},
+		{
+			name:            "error for packet containing uneven number of elements",
+			raw:             "\\key\\value\\key-without-value\\final\\",
+			wantErrContains: "gamespy packet string contains key without corresponding value",
 		},
 	}
 
@@ -143,8 +147,8 @@ func TestFromString(t *testing.T) {
 			packet, err := FromString(tt.raw)
 
 			// THEN
-			if tt.wantErr {
-				require.Error(t, err)
+			if tt.wantErrContains != "" {
+				require.ErrorContains(t, err, tt.wantErrContains)
 			} else {
 				require.NoError(t, err)
 				require.Equal(t, tt.expectedPacket, packet)
