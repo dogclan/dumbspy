@@ -35,7 +35,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.goarch }}
-          goversion: https://go.dev/dl/go1.19.5.linux-${{ matrix.goarch }}.tar.gz
+          goversion: https://go.dev/dl/go1.19.5.linux-amd64.tar.gz
           project_path: cmd/dumbspy
           ldflags: "-X 'main.buildTime=${{ needs.meta.outputs.date }}' -X 'main.buildCommit=${{ github.sha }}' -X 'main.buildVersion=${{ github.ref_name }}'"
           sha256sum: true
