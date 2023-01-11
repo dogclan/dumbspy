@@ -1,0 +1,12 @@
+.git/
+.github/
+.gitignore
+.idea/
+.tool-versions
+renovate.json
+
+LICENSE
+README.md
+
+./dumbspy
+cmd/dumbspy/dumbspy
