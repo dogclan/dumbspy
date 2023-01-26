@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"syscall"
 	"time"
 
 	"dogclan/dumbspy/cmd/dumbspy/internal/config"
@@ -19,7 +20,9 @@ import (
 )
 
 const (
-	network = "tcp4"
+	network      = "tcp4"
+	logKeyRemote = "remote"
+	logKeyData   = "data"
 )
 
 var (
@@ -76,15 +79,22 @@ func main() {
 }
 
 func handleRequest(conn net.Conn) {
+	remoteAddr := conn.RemoteAddr().String()
 	defer func(conn net.Conn) {
 		err := conn.Close()
 		if err != nil {
-			log.Error().Err(err).Msg("Failed to close connection")
+			log.Error().
+				Err(err).
+				Str(logKeyRemote, remoteAddr).
+				Msg("Failed to close connection")
 		}
 	}(conn)
 
 	if err := conn.SetReadDeadline(time.Now().Add(time.Second)); err != nil {
-		log.Error().Err(err).Msg("Failed to set read deadline")
+		log.Error().
+			Err(err).
+			Str(logKeyRemote, remoteAddr).
+			Msg("Failed to set read deadline")
 		return
 	}
 
@@ -95,48 +105,63 @@ func handleRequest(conn net.Conn) {
 	prompt.Write("id", "1")
 
 	log.Debug().
-		Bytes("data", prompt.Bytes()).
+		Bytes(logKeyData, prompt.Bytes()).
+		Str(logKeyRemote, remoteAddr).
 		Msg("Sending challenge prompt")
 	if _, err := conn.Write(prompt.Bytes()); err != nil {
-		log.Error().Err(err).Msg("Failed to send challenge")
+		log.Error().
+			Err(err).
+			Str(logKeyRemote, remoteAddr).
+			Msg("Failed to send challenge")
 		return
 	}
 
 	log.Debug().
+		Str(logKeyRemote, remoteAddr).
 		Msg("Reading login request")
 	buffer := make([]byte, 512)
 	n, err := conn.Read(buffer)
 	if err != nil {
 		// EOF and timeout errors are not of interest => only log to debug and return
-		if errors.Is(err, io.EOF) {
+		if errors.Is(err, io.EOF) || errors.Is(err, syscall.ECONNRESET) {
 			log.Debug().
-				Err(err).
-				Msg("Peer closed connection while reading login request")
+				Str(logKeyRemote, remoteAddr).
+				Msg("Peer closed/reset connection while reading login request")
 			return
 		}
-		if e, ok := err.(net.Error); ok && e.Timeout() {
+		if errors.Is(err, os.ErrDeadlineExceeded) {
 			log.Debug().
-				Err(err).
+				Str(logKeyRemote, remoteAddr).
 				Msg("Timed out reading login request")
 			return
 		}
-		log.Error().Err(err).Msg("Failed to read login request")
+		log.Error().
+			Err(err).
+			Str(logKeyRemote, remoteAddr).
+			Msg("Failed to read login request")
 		return
 	}
 
 	log.Debug().
-		Bytes("data", buffer[:n]).
+		Bytes(logKeyData, buffer[:n]).
+		Str(logKeyRemote, remoteAddr).
 		Msg("Received login request")
 	req, err := packet.FromString(string(buffer[:n]))
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to parse login request packet")
+		log.Error().
+			Err(err).
+			Str(logKeyRemote, remoteAddr).
+			Msg("Failed to parse login request packet")
 		return
 	}
 
 	res := new(packet.GamespyPacket)
 	login := internal.NewGamespyLoginRequest(req)
 	if err := login.Validate(); err != nil {
-		log.Error().Err(err).Msg("Received invalid login request")
+		log.Error().
+			Err(err).
+			Str(logKeyRemote, remoteAddr).
+			Msg("Received invalid login request")
 
 		res.Write("error", "")
 		res.Write("err", "0")
@@ -146,6 +171,7 @@ func handleRequest(conn net.Conn) {
 
 		log.Debug().
 			Bytes("data", res.Bytes()).
+			Str(logKeyRemote, remoteAddr).
 			Msg("Sending error response")
 	} else {
 		playerID := internal.GetPlayerID(
@@ -170,11 +196,15 @@ func handleRequest(conn net.Conn) {
 		res.Write("id", "1")
 
 		log.Debug().
-			Bytes("data", res.Bytes()).
+			Bytes(logKeyData, res.Bytes()).
+			Str(logKeyRemote, remoteAddr).
 			Msg("Sending login response")
 	}
 
 	if _, err := conn.Write(res.Bytes()); err != nil {
-		log.Error().Err(err).Msg("Failed to send response")
+		log.Error().
+			Err(err).
+			Str(logKeyRemote, remoteAddr).
+			Msg("Failed to send response")
 	}
 }
