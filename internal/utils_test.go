@@ -56,7 +56,7 @@ func TestGetPlayerID(t *testing.T) {
 			namespaceID:      "some-namespaceID",
 			sdkRevision:      "some-sdkRevision",
 			players:          map[int]string{},
-			expectedPlayerID: 500057082,
+			expectedPlayerID: 500001095,
 		},
 		{
 			name:        "re-assigns player id to returning player",
@@ -66,27 +66,27 @@ func TestGetPlayerID(t *testing.T) {
 			namespaceID: "some-namespaceID",
 			sdkRevision: "some-sdkRevision",
 			players: map[int]string{
-				500057082: ComputeMD5(strings.Join([]string{
+				500001095: strings.Join([]string{
 					"some-nick",
 					"some-productID",
 					"some-gameName",
 					"some-namespaceID",
 					"some-sdkRevision",
-				}, ":")),
+				}, ":"),
 			},
-			expectedPlayerID: 500057082,
+			expectedPlayerID: 500001095,
 		},
 		{
-			name:        "assigns random player id on hash collision",
+			name:        "assigns random player id on identifier collision",
 			nick:        "some-nick",
 			productID:   "some-productID",
 			gameName:    "some-gameName",
 			namespaceID: "some-namespaceID",
 			sdkRevision: "some-sdkRevision",
 			players: map[int]string{
-				500057082: "some-other-hash",
+				500001095: "some-other-identifier",
 			},
-			expectedPlayerID: 500057082,
+			expectedPlayerID: 500001095,
 			wantRandom:       true,
 		},
 	}

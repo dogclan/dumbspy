@@ -46,26 +46,26 @@ func ComputeMD5(p string) string {
 }
 
 func GetPlayerID(nick, productID, gameName, namespaceID, sdkRevision string) int {
-	// Compute hash of all unique/constant attributes in a login request
-	hash := ComputeMD5(strings.Join([]string{nick, productID, gameName, namespaceID, sdkRevision}, ":"))
-	playerID := basePlayerID + ComputeCRC16Int(hash)
+	// Join all unique/constant attributes in a login request to get a unique identifier
+	identifier := strings.Join([]string{nick, productID, gameName, namespaceID, sdkRevision}, ":")
+	playerID := basePlayerID + ComputeCRC16Int(identifier)
 
 	// Lock and unlock players map to prevent concurrent access
 	playersMutex.Lock()
 	defer playersMutex.Unlock()
 
-	existingHash, ok := players[playerID]
+	existingIdentifier, ok := players[playerID]
 	if !ok {
-		players[playerID] = hash
-	} else if existingHash != hash {
+		players[playerID] = identifier
+	} else if existingIdentifier != identifier {
 		log.Warn().
-			Str("nick", nick).
-			Str("productID", productID).
-			Msg("Player hash mismatch, assigning random player id")
+			Str("existingIdentifier", existingIdentifier).
+			Str("identifier", identifier).
+			Msg("Player identifier mismatch, assigning random player id")
 
-		// A *different* random player id will be assigned for each collision with the same hash. A player who's
-		// hash is colliding will thus receive a different player id each time they log in. However, collisions should
-		// be rare in reality and the id is unique for the running duration of the dumbspy process.
+		// A *different* random player id will be assigned for each collision with the same identifier. A player who's
+		// identifier is colliding will thus receive a different player id each time they log in. However, collisions
+		// should be rare in reality and the id is unique for the running duration of the dumbspy process.
 		for ok {
 			playerID = basePlayerID - rand.Intn(10000)
 			_, ok = players[playerID]
