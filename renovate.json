@@ -2,10 +2,9 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:base",
-    ":semanticCommits",
-    ":pinVersions",
+    ":semanticCommits"
     ":automergeLinters",
-    ":automergeTesters",
-    ":automergeTypes"
-  ]
+    ":automergeTesters"
+  ],
+  "separateMinorPatch": true
 }
