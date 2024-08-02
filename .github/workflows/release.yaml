@@ -12,12 +12,11 @@ jobs:
   meta:
     runs-on: ubuntu-latest
     outputs:
-      date: ${{ steps.meta.outputs.date }}
+      date: ${{ steps.date.outputs.date }}
     steps:
-      - name: Prepare release meta
-        id: meta
+      - id: date
         run: |
-          echo "::set-output name=date::$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          echo "date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
 
   release-bin:
     name: Release Go Binary
