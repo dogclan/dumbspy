@@ -26,7 +26,7 @@ var (
 		FinVal: 0x0,
 		BigEnd: true,
 	}
-	basePlayerID = 500000000
+	basePlayerID = 600000000
 	players      = map[int]string{}
 	playersMutex = sync.RWMutex{}
 )
