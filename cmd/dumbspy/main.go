@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	"dogclan/dumbspy/cmd/dumbspy/internal/config"
+	"dogclan/dumbspy/cmd/dumbspy/internal/options"
 	"dogclan/dumbspy/internal"
 	"dogclan/dumbspy/pkg/packet"
 
@@ -37,28 +37,28 @@ func init() {
 
 func main() {
 	version := fmt.Sprintf("dumbspy %s (%s) built at %s", buildVersion, buildCommit, buildTime)
-	cfg := config.Init()
+	opts := options.Init()
 
 	// Print version and exit
-	if cfg.Version {
+	if opts.Version {
 		fmt.Println(version)
 		os.Exit(0)
 	}
 
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout, NoColor: !cfg.ColorizeLogs})
-	if cfg.Debug {
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout, NoColor: !opts.ColorizeLogs})
+	if opts.Debug {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	} else {
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
 
-	listen, err := net.Listen(network, cfg.ListenAddr)
+	listen, err := net.Listen(network, opts.ListenAddr)
 	if err != nil {
 		log.Fatal().Err(err).Msgf("Failed to start listener")
 	}
 
 	log.Info().
-		Str("address", cfg.ListenAddr).
+		Str("address", opts.ListenAddr).
 		Msg("Listening for connections")
 
 	// close listener
