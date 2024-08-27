@@ -54,7 +54,9 @@ func main() {
 
 	listen, err := net.Listen(network, opts.ListenAddr)
 	if err != nil {
-		log.Fatal().Err(err).Msgf("Failed to start listener")
+		log.Fatal().
+			Err(err).
+			Msgf("Failed to start listener")
 	}
 
 	log.Info().
@@ -63,16 +65,20 @@ func main() {
 
 	// close listener
 	defer func(listen net.Listener) {
-		err := listen.Close()
-		if err != nil {
-			log.Error().Err(err).Msg("Failed to close listener")
+		err2 := listen.Close()
+		if err2 != nil {
+			log.Error().
+				Err(err2).
+				Msg("Failed to close listener")
 		}
 	}(listen)
 
 	for {
-		conn, err := listen.Accept()
-		if err != nil {
-			log.Error().Err(err).Msg("Failed to accept new connection")
+		conn, err2 := listen.Accept()
+		if err2 != nil {
+			log.Error().
+				Err(err2).
+				Msg("Failed to accept new connection")
 		}
 		go handleRequest(conn)
 	}
@@ -122,23 +128,21 @@ func handleRequest(conn net.Conn) {
 	buffer := make([]byte, 512)
 	n, err := conn.Read(buffer)
 	if err != nil {
-		// EOF and timeout errors are not of interest => only log to debug and return
+		// EOF and timeout errors are not of interest => only log to debug
 		if errors.Is(err, io.EOF) || errors.Is(err, syscall.ECONNRESET) {
 			log.Debug().
 				Str(logKeyRemote, remoteAddr).
 				Msg("Peer closed/reset connection while reading login request")
-			return
-		}
-		if errors.Is(err, os.ErrDeadlineExceeded) {
+		} else if errors.Is(err, os.ErrDeadlineExceeded) {
 			log.Debug().
 				Str(logKeyRemote, remoteAddr).
 				Msg("Timed out reading login request")
-			return
+		} else {
+			log.Error().
+				Err(err).
+				Str(logKeyRemote, remoteAddr).
+				Msg("Failed to read login request")
 		}
-		log.Error().
-			Err(err).
-			Str(logKeyRemote, remoteAddr).
-			Msg("Failed to read login request")
 		return
 	}
 
@@ -157,7 +161,7 @@ func handleRequest(conn net.Conn) {
 
 	res := new(packet.GamespyPacket)
 	login := internal.NewGamespyLoginRequest(req)
-	if err := login.Validate(); err != nil {
+	if err = login.Validate(); err != nil {
 		log.Error().
 			Err(err).
 			Str(logKeyRemote, remoteAddr).
@@ -201,7 +205,7 @@ func handleRequest(conn net.Conn) {
 			Msg("Sending login response")
 	}
 
-	if _, err := conn.Write(res.Bytes()); err != nil {
+	if _, err = conn.Write(res.Bytes()); err != nil {
 		log.Error().
 			Err(err).
 			Str(logKeyRemote, remoteAddr).
