@@ -1,4 +1,4 @@
-module dogclan/dumbspy
+module github.com/dogclan/dumbspy
 
 go 1.19
 

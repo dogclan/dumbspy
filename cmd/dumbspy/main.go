@@ -11,9 +11,9 @@ import (
 	"syscall"
 	"time"
 
-	"dogclan/dumbspy/cmd/dumbspy/internal/options"
-	"dogclan/dumbspy/internal"
-	"dogclan/dumbspy/pkg/packet"
+	"github.com/dogclan/dumbspy/cmd/dumbspy/internal/options"
+	"github.com/dogclan/dumbspy/internal"
+	"github.com/dogclan/dumbspy/pkg/packet"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"

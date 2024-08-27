@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"dogclan/dumbspy/pkg/packet"
+	"github.com/dogclan/dumbspy/pkg/packet"
 
 	"github.com/go-playground/validator/v10"
 )
