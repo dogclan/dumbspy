@@ -123,13 +123,13 @@ func TestGetPlayerID(t *testing.T) {
 func TestGenerateProof(t *testing.T) {
 	// GIVEN
 	nick := "some-nick"
-	response := "131def0e93e67e3e62b39d74d6316511"
+	hash := "131def0e93e67e3e62b39d74d6316511"
 	c1 := "4Jp6A4kK02"
 	c2 := "YJk5UFExKBwn0PEpOpinWHsRCDcfejyJ"
-	expected := "f7914097b628f62ac64cd9400472ce98"
+	expected := "4b1ec6377ec7f3c99716df13680638e2"
 
 	// WHEN
-	actual := GenerateProof(nick, response, c1, c2)
+	actual := GenerateProof(nick, hash, c1, c2)
 
 	// THEN
 	assert.Equal(t, expected, actual)
