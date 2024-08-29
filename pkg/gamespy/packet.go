@@ -3,6 +3,7 @@ package gamespy
 import (
 	"bytes"
 	"errors"
+	"strconv"
 	"strings"
 )
 
@@ -73,6 +74,10 @@ func (p *Packet) Set(key string, value string) {
 	}
 }
 
+func (p *Packet) SetInt(key string, value int) {
+	p.Set(key, strconv.Itoa(value))
+}
+
 func (p *Packet) Lookup(key string) (string, bool) {
 	i, ok := p.keys[key]
 	if !ok {
@@ -85,6 +90,15 @@ func (p *Packet) Lookup(key string) (string, bool) {
 func (p *Packet) Get(key string) string {
 	value, _ := p.Lookup(key)
 	return value
+}
+
+func (p *Packet) GetInt(key string) (int, error) {
+	value := p.Get(key)
+	if value == "" {
+		return 0, nil
+	}
+
+	return strconv.Atoi(value)
 }
 
 func (p *Packet) Map() map[string]string {

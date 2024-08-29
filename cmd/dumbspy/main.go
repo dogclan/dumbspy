@@ -7,7 +7,6 @@ import (
 	"math/rand"
 	"net"
 	"os"
-	"strconv"
 	"syscall"
 	"time"
 
@@ -106,9 +105,9 @@ func handleRequest(conn net.Conn) {
 
 	challenge := gamespy.RandString(10)
 	prompt := new(gamespy.Packet)
-	prompt.Set("lc", "1")
+	prompt.SetInt("lc", 1)
 	prompt.Set("challenge", challenge)
-	prompt.Set("id", "1")
+	prompt.SetInt("id", 1)
 
 	log.Debug().
 		Bytes(logKeyData, prompt.Bytes()).
@@ -168,10 +167,10 @@ func handleRequest(conn net.Conn) {
 			Msg("Received invalid login request")
 
 		res.Set("error", "")
-		res.Set("err", "0")
+		res.SetInt("err", 0)
 		res.Set("fatal", "")
 		res.Set("errmsg", "Invalid Query!")
-		res.Set("id", "1")
+		res.SetInt("id", 1)
 
 		log.Debug().
 			Bytes("data", res.Bytes()).
@@ -185,19 +184,19 @@ func handleRequest(conn net.Conn) {
 			login.NamespaceID,
 			login.SDKRevision,
 		)
-		res.Set("lc", "2")
-		res.Set("sesskey", strconv.Itoa(int(gamespy.ComputeCRC16(login.UniqueNick))))
+		res.SetInt("lc", 2)
+		res.SetInt("sesskey", int(gamespy.ComputeCRC16(login.UniqueNick)))
 		res.Set("proof", gamespy.GenerateProof(
 			login.UniqueNick,
 			login.Response,
 			challenge,
 			login.Challenge,
 		))
-		res.Set("userid", strconv.Itoa(playerID))
-		res.Set("profileid", strconv.Itoa(playerID))
+		res.SetInt("userid", playerID)
+		res.SetInt("profileid", playerID)
 		res.Set("uniquenick", login.UniqueNick)
-		res.Set("lt", fmt.Sprintf("%s__", gamespy.RandString(22)))
-		res.Set("id", "1")
+		res.Set("lt", gamespy.RandString(22)+"__")
+		res.SetInt("id", 1)
 
 		log.Debug().
 			Bytes(logKeyData, res.Bytes()).
