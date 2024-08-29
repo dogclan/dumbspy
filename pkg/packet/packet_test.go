@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestFromString(t *testing.T) {
+func TestFromBytes(t *testing.T) {
 	type test struct {
 		name            string
 		bytes           []byte
