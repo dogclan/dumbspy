@@ -162,7 +162,7 @@ func handleRequest(conn net.Conn) {
 	}
 
 	res := new(gamespy.Packet)
-	login := internal.NewGamespyLoginRequest(req)
+	login := internal.NewGamespyLoginRequestFromPacket(req)
 	if err = login.Validate(); err != nil {
 		log.Error().
 			Err(err).

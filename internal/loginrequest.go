@@ -19,8 +19,8 @@ type GamespyLoginRequest struct {
 	ID          string  `validate:"numeric,required"`
 }
 
-func NewGamespyLoginRequest(packet *gamespy.Packet) *GamespyLoginRequest {
-	r := &GamespyLoginRequest{}
+func NewGamespyLoginRequestFromPacket(packet *gamespy.Packet) *GamespyLoginRequest {
+	r := new(GamespyLoginRequest)
 	packet.Do(func(element gamespy.KeyValuePair) {
 		switch element.Key {
 		case "login":
@@ -45,7 +45,6 @@ func NewGamespyLoginRequest(packet *gamespy.Packet) *GamespyLoginRequest {
 			r.ID = element.Value
 		}
 	})
-
 	return r
 }
 
