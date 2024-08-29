@@ -22,6 +22,9 @@ const (
 	network      = "tcp4"
 	logKeyRemote = "remote"
 	logKeyData   = "data"
+
+	// Following https://github.com/openspy/openspy-core/blob/5993df54c6b289361228920fa0db7209aed4cfe5/code/SharedTasks/src/OS/GPShared.h#L355
+	errorCodeLoginFailed = 0x100
 )
 
 var (
@@ -167,9 +170,9 @@ func handleRequest(conn net.Conn) {
 			Msg("Received invalid login request")
 
 		res.Set("error", "")
-		res.SetInt("err", 0)
+		res.SetInt("err", errorCodeLoginFailed)
 		res.Set("fatal", "")
-		res.Set("errmsg", "Invalid Query!")
+		res.Set("errmsg", "There was an error logging in to the GP backend.")
 		res.SetInt("id", 1)
 
 		log.Debug().
