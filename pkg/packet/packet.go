@@ -73,6 +73,20 @@ func (p *GamespyPacket) Set(key string, value string) {
 	}
 }
 
+func (p *GamespyPacket) Lookup(key string) (string, bool) {
+	i, ok := p.keys[key]
+	if !ok {
+		return "", false
+	}
+
+	return p.elements[i].Value, true
+}
+
+func (p *GamespyPacket) Get(key string) string {
+	value, _ := p.Lookup(key)
+	return value
+}
+
 func (p *GamespyPacket) Map() map[string]string {
 	elements := map[string]string{}
 	for _, element := range p.elements {

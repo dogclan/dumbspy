@@ -249,6 +249,72 @@ func TestGamespyPacket_Set(t *testing.T) {
 	})
 }
 
+func TestGamespyPacket_Lookup(t *testing.T) {
+	const key = "key"
+	const value = "value"
+	packet := &GamespyPacket{
+		keys: map[string]int{
+			key: 0,
+		},
+		elements: []KeyValuePair{
+			{
+				Key:   key,
+				Value: value,
+			},
+		},
+	}
+
+	t.Run("returns value, true for existing key", func(t *testing.T) {
+		// WHEN
+		actual, ok := packet.Lookup(key)
+
+		// THEN
+		assert.Equal(t, value, actual)
+		assert.True(t, ok)
+	})
+
+	t.Run("returns empty string, false for missing key", func(t *testing.T) {
+		// WHEN
+		actual, ok := packet.Lookup("missing")
+
+		// THEN
+		assert.Empty(t, actual)
+		assert.False(t, ok)
+	})
+}
+
+func TestGamespyPacket_Get(t *testing.T) {
+	const key = "key"
+	const value = "value"
+	packet := &GamespyPacket{
+		keys: map[string]int{
+			key: 0,
+		},
+		elements: []KeyValuePair{
+			{
+				Key:   key,
+				Value: value,
+			},
+		},
+	}
+
+	t.Run("returns value for existing key", func(t *testing.T) {
+		// WHEN
+		actual := packet.Get(key)
+
+		// THEN
+		assert.Equal(t, value, actual)
+	})
+
+	t.Run("returns empty string for missing key", func(t *testing.T) {
+		// WHEN
+		actual := packet.Get("missing")
+
+		// THEN
+		assert.Empty(t, actual)
+	})
+}
+
 func TestGamespyPacket_Map(t *testing.T) {
 	type test struct {
 		name        string
