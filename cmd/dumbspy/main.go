@@ -106,9 +106,9 @@ func handleRequest(conn net.Conn) {
 
 	challenge := internal.RandString(10)
 	prompt := new(packet.GamespyPacket)
-	prompt.Write("lc", "1")
-	prompt.Write("challenge", challenge)
-	prompt.Write("id", "1")
+	prompt.Set("lc", "1")
+	prompt.Set("challenge", challenge)
+	prompt.Set("id", "1")
 
 	log.Debug().
 		Bytes(logKeyData, prompt.Bytes()).
@@ -167,11 +167,11 @@ func handleRequest(conn net.Conn) {
 			Str(logKeyRemote, remoteAddr).
 			Msg("Received invalid login request")
 
-		res.Write("error", "")
-		res.Write("err", "0")
-		res.Write("fatal", "")
-		res.Write("errmsg", "Invalid Query!")
-		res.Write("id", "1")
+		res.Set("error", "")
+		res.Set("err", "0")
+		res.Set("fatal", "")
+		res.Set("errmsg", "Invalid Query!")
+		res.Set("id", "1")
 
 		log.Debug().
 			Bytes("data", res.Bytes()).
@@ -185,19 +185,19 @@ func handleRequest(conn net.Conn) {
 			login.NamespaceID,
 			login.SDKRevision,
 		)
-		res.Write("lc", "2")
-		res.Write("sesskey", internal.ComputeCRC16Str(login.UniqueNick))
-		res.Write("proof", internal.GenerateProof(
+		res.Set("lc", "2")
+		res.Set("sesskey", internal.ComputeCRC16Str(login.UniqueNick))
+		res.Set("proof", internal.GenerateProof(
 			login.UniqueNick,
 			login.Response,
 			challenge,
 			login.Challenge,
 		))
-		res.Write("userid", strconv.Itoa(playerID))
-		res.Write("profileid", strconv.Itoa(playerID))
-		res.Write("uniquenick", login.UniqueNick)
-		res.Write("lt", fmt.Sprintf("%s__", internal.RandString(22)))
-		res.Write("id", "1")
+		res.Set("userid", strconv.Itoa(playerID))
+		res.Set("profileid", strconv.Itoa(playerID))
+		res.Set("uniquenick", login.UniqueNick)
+		res.Set("lt", fmt.Sprintf("%s__", internal.RandString(22)))
+		res.Set("id", "1")
 
 		log.Debug().
 			Bytes(logKeyData, res.Bytes()).

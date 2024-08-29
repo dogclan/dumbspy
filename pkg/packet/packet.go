@@ -14,11 +14,21 @@ func (p *KeyValuePair) String() string {
 }
 
 type GamespyPacket struct {
+	// Maps any KeyValuePair.Key in elements to the corresponding index.
+	// Used to keep access times consistent when checking if key already exists
+	// (rather than checking elements every time).
+	keys     map[string]int
 	elements []KeyValuePair // Store elements in list to maintain order
 }
 
 func NewGamespyPacket(elements ...KeyValuePair) *GamespyPacket {
+	keys := make(map[string]int, len(elements))
+	for i, element := range elements {
+		keys[element.Key] = i
+	}
+
 	return &GamespyPacket{
+		keys:     keys,
 		elements: elements,
 	}
 }
@@ -35,13 +45,20 @@ func FromString(raw string) (*GamespyPacket, error) {
 
 	packet := NewGamespyPacket()
 	for i := 0; i < len(elements); i += 2 {
-		packet.Write(elements[i], elements[i+1])
+		packet.Set(elements[i], elements[i+1])
 	}
 	return packet, nil
 }
 
-func (p *GamespyPacket) Write(key string, value string) {
-	p.elements = append(p.elements, KeyValuePair{key, value})
+// Set Adds a new KeyValuePair to the packet. If key exists, the existing KeyValuePair is updated instead.
+func (p *GamespyPacket) Set(key string, value string) {
+	i, ok := p.keys[key]
+	if ok {
+		p.elements[i].Value = value
+	} else {
+		p.elements = append(p.elements, KeyValuePair{Key: key, Value: value})
+		p.keys[key] = len(p.elements) - 1
+	}
 }
 
 func (p *GamespyPacket) Map() map[string]string {

@@ -20,6 +20,11 @@ func TestFromString(t *testing.T) {
 			name: "parses challenge prompt packet",
 			raw:  "\\lc\\1\\challenge\\TcP1s0FtTB\\id\\1\\final\\",
 			expectedPacket: &GamespyPacket{
+				keys: map[string]int{
+					"lc":        0,
+					"challenge": 1,
+					"id":        2,
+				},
 				elements: []KeyValuePair{
 					{
 						Key:   "lc",
@@ -40,6 +45,18 @@ func TestFromString(t *testing.T) {
 			name: "parses login request packet",
 			raw:  "\\login\\\\challenge\\YJk5UFExKBwn0PEpOpinWHsRCDcfejyJ\\uniquenick\\some-nick\\response\\638ac6fccc7f5a79f25b82132c87572b\\port\\2475\\productid\\10493\\gamename\\battlefield2\\namespaceid\\12\\sdkrevision\\3\\id\\1\\final\\",
 			expectedPacket: &GamespyPacket{
+				keys: map[string]int{
+					"login":       0,
+					"challenge":   1,
+					"uniquenick":  2,
+					"response":    3,
+					"port":        4,
+					"productid":   5,
+					"gamename":    6,
+					"namespaceid": 7,
+					"sdkrevision": 8,
+					"id":          9,
+				},
 				elements: []KeyValuePair{
 					{
 						Key:   "login",
@@ -88,6 +105,16 @@ func TestFromString(t *testing.T) {
 			name: "parses login response packet",
 			raw:  "\\lc\\2\\sesskey\\19745\\proof\\8c628092b8ac503e184e68c96d27e758\\userid\\123\\profileid\\456\\uniquenick\\some-nick\\lt\\SIYCIWSEARGXPMEUJRBKKE__\\id\\1\\final\\",
 			expectedPacket: &GamespyPacket{
+				keys: map[string]int{
+					"lc":         0,
+					"sesskey":    1,
+					"proof":      2,
+					"userid":     3,
+					"profileid":  4,
+					"uniquenick": 5,
+					"lt":         6,
+					"id":         7,
+				},
 				elements: []KeyValuePair{
 					{
 						Key:   "lc",
@@ -155,6 +182,71 @@ func TestFromString(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGamespyPacket_Set(t *testing.T) {
+	t.Run("adds new key", func(t *testing.T) {
+		// GIVEN
+		packet := &GamespyPacket{
+			keys: map[string]int{
+				"original-key": 0,
+			},
+			elements: []KeyValuePair{
+				{
+					Key:   "original-key",
+					Value: "original-value",
+				},
+			},
+		}
+
+		// WHEN
+		packet.Set("new-key", "new-value")
+
+		// THEN
+		assert.Equal(t, map[string]int{
+			"original-key": 0,
+			"new-key":      1,
+		}, packet.keys)
+		assert.Equal(t, []KeyValuePair{
+			{
+				Key:   "original-key",
+				Value: "original-value",
+			},
+			{
+				Key:   "new-key",
+				Value: "new-value",
+			},
+		}, packet.elements)
+	})
+
+	t.Run("updates existing key", func(t *testing.T) {
+		// GIVEN
+		packet := &GamespyPacket{
+			keys: map[string]int{
+				"original-key": 0,
+			},
+			elements: []KeyValuePair{
+				{
+					Key:   "original-key",
+					Value: "original-value",
+				},
+			},
+		}
+
+		// WHEN
+		packet.Set("original-key", "new-value")
+
+		// THEN
+		assert.Equal(t, map[string]int{
+			"original-key": 0,
+		}, packet.keys)
+		assert.Equal(t, []KeyValuePair{
+			{
+				Key:   "original-key",
+				Value: "new-value",
+			},
+		}, packet.elements)
+	})
 }
 
 func TestGamespyPacket_Map(t *testing.T) {
