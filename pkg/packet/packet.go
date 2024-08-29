@@ -1,6 +1,7 @@
 package packet
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -35,12 +36,12 @@ func NewGamespyPacket(elements ...KeyValuePair) *GamespyPacket {
 
 func FromString(raw string) (*GamespyPacket, error) {
 	if !strings.HasPrefix(raw, "\\") || !strings.HasSuffix(raw, "\\final\\") {
-		return nil, fmt.Errorf("gamespy packet string is malformed")
+		return nil, errors.New("gamespy packet string is malformed")
 	}
 
 	elements := strings.Split(raw[1:len(raw)-7], "\\")
 	if len(elements)%2 != 0 {
-		return nil, fmt.Errorf("gamespy packet string contains key without corresponding value")
+		return nil, errors.New("gamespy packet string contains key without corresponding value")
 	}
 
 	packet := NewGamespyPacket()
