@@ -24,7 +24,7 @@ const (
 	logKeyData   = "data"
 
 	// Following https://github.com/openspy/openspy-core/blob/5993df54c6b289361228920fa0db7209aed4cfe5/code/SharedTasks/src/OS/GPShared.h#L355
-	errorCodeLoginFailed = 0x100
+	errorCodeLoginFailed = "256"
 )
 
 var (
@@ -108,9 +108,9 @@ func handleRequest(conn net.Conn) {
 
 	challenge := gamespy.RandString(10)
 	prompt := new(gamespy.Packet)
-	prompt.SetInt("lc", 1)
-	prompt.Set("challenge", challenge)
-	prompt.SetInt("id", 1)
+	prompt.Add("lc", "1")
+	prompt.Add("challenge", challenge)
+	prompt.Add("id", "1")
 
 	log.Debug().
 		Bytes(logKeyData, prompt.Bytes()).
@@ -169,11 +169,11 @@ func handleRequest(conn net.Conn) {
 			Str(logKeyRemote, remoteAddr).
 			Msg("Received invalid login request")
 
-		res.Set("error", "")
-		res.SetInt("err", errorCodeLoginFailed)
-		res.Set("fatal", "")
-		res.Set("errmsg", "There was an error logging in to the GP backend.")
-		res.SetInt("id", 1)
+		res.Add("error", "")
+		res.Add("err", errorCodeLoginFailed)
+		res.Add("fatal", "")
+		res.Add("errmsg", "There was an error logging in to the GP backend.")
+		res.Add("id", "1")
 
 		log.Debug().
 			Bytes("data", res.Bytes()).
@@ -187,19 +187,19 @@ func handleRequest(conn net.Conn) {
 			login.NamespaceID,
 			login.SDKRevision,
 		)
-		res.SetInt("lc", 2)
-		res.SetInt("sesskey", int(gamespy.ComputeCRC16(login.UniqueNick)))
-		res.Set("proof", gamespy.GenerateProof(
+		res.Add("lc", "2")
+		res.AddInt("sesskey", int(gamespy.ComputeCRC16(login.UniqueNick)))
+		res.Add("proof", gamespy.GenerateProof(
 			login.UniqueNick,
 			login.Response,
 			challenge,
 			login.Challenge,
 		))
-		res.SetInt("userid", playerID)
-		res.SetInt("profileid", playerID)
-		res.Set("uniquenick", login.UniqueNick)
-		res.Set("lt", gamespy.RandString(22)+"__")
-		res.SetInt("id", 1)
+		res.AddInt("userid", playerID)
+		res.AddInt("profileid", playerID)
+		res.Add("uniquenick", login.UniqueNick)
+		res.Add("lt", gamespy.RandString(22)+"__")
+		res.Add("id", "1")
 
 		log.Debug().
 			Bytes(logKeyData, res.Bytes()).
