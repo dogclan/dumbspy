@@ -20,11 +20,6 @@ func TestFromBytes(t *testing.T) {
 			name:  "parses challenge prompt packet",
 			bytes: []byte("\\lc\\1\\challenge\\TcP1s0FtTB\\id\\1\\final\\"),
 			expectedPacket: &Packet{
-				keys: map[string]int{
-					"lc":        0,
-					"challenge": 1,
-					"id":        2,
-				},
 				elements: []KeyValuePair{
 					{
 						Key:   "lc",
@@ -45,18 +40,6 @@ func TestFromBytes(t *testing.T) {
 			name:  "parses login request packet",
 			bytes: []byte("\\login\\\\challenge\\YJk5UFExKBwn0PEpOpinWHsRCDcfejyJ\\uniquenick\\some-nick\\response\\638ac6fccc7f5a79f25b82132c87572b\\port\\2475\\productid\\10493\\gamename\\battlefield2\\namespaceid\\12\\sdkrevision\\3\\id\\1\\final\\"),
 			expectedPacket: &Packet{
-				keys: map[string]int{
-					"login":       0,
-					"challenge":   1,
-					"uniquenick":  2,
-					"response":    3,
-					"port":        4,
-					"productid":   5,
-					"gamename":    6,
-					"namespaceid": 7,
-					"sdkrevision": 8,
-					"id":          9,
-				},
 				elements: []KeyValuePair{
 					{
 						Key:   "login",
@@ -105,16 +88,6 @@ func TestFromBytes(t *testing.T) {
 			name:  "parses login response packet",
 			bytes: []byte("\\lc\\2\\sesskey\\19745\\proof\\8c628092b8ac503e184e68c96d27e758\\userid\\123\\profileid\\456\\uniquenick\\some-nick\\lt\\SIYCIWSEARGXPMEUJRBKKE__\\id\\1\\final\\"),
 			expectedPacket: &Packet{
-				keys: map[string]int{
-					"lc":         0,
-					"sesskey":    1,
-					"proof":      2,
-					"userid":     3,
-					"profileid":  4,
-					"uniquenick": 5,
-					"lt":         6,
-					"id":         7,
-				},
 				elements: []KeyValuePair{
 					{
 						Key:   "lc",
@@ -147,6 +120,62 @@ func TestFromBytes(t *testing.T) {
 					{
 						Key:   "id",
 						Value: "1",
+					},
+				},
+			},
+		},
+		{
+			name:  "parse nicks check response packet with single result",
+			bytes: []byte("\\nr\\0\\nick\\a-nick\\uniquenick\\a-uniquenick\\ndone\\\\final\\"),
+			expectedPacket: &Packet{
+				elements: []KeyValuePair{
+					{
+						Key:   "nr",
+						Value: "0",
+					},
+					{
+						Key:   "nick",
+						Value: "a-nick",
+					},
+					{
+						Key:   "uniquenick",
+						Value: "a-uniquenick",
+					},
+					{
+						Key:   "ndone",
+						Value: "",
+					},
+				},
+			},
+		},
+		{
+			name:  "parse nicks check response packet with multiple results",
+			bytes: []byte("\\nr\\0\\nick\\a-nick\\uniquenick\\a-uniquenick\\nick\\b-nick\\uniquenick\\b-uniquenick\\ndone\\\\final\\"),
+			expectedPacket: &Packet{
+				elements: []KeyValuePair{
+					{
+						Key:   "nr",
+						Value: "0",
+					},
+					{
+						Key:   "nick",
+						Value: "a-nick",
+					},
+					{
+						Key:   "uniquenick",
+						Value: "a-uniquenick",
+					},
+					{
+						Key:   "nick",
+						Value: "b-nick",
+					},
+					{
+						Key:   "uniquenick",
+						Value: "b-uniquenick",
+					},
+					{
+						Key:   "ndone",
+						Value: "",
 					},
 				},
 			},
@@ -193,9 +222,6 @@ func TestGamespyPacket_Set(t *testing.T) {
 		packet.Set("initial-key", "initial-value")
 
 		// THEN
-		assert.Equal(t, map[string]int{
-			"initial-key": 0,
-		}, packet.keys)
 		assert.Equal(t, []KeyValuePair{
 			{
 				Key:   "initial-key",
@@ -207,9 +233,6 @@ func TestGamespyPacket_Set(t *testing.T) {
 	t.Run("adds new key", func(t *testing.T) {
 		// GIVEN
 		packet := &Packet{
-			keys: map[string]int{
-				"original-key": 0,
-			},
 			elements: []KeyValuePair{
 				{
 					Key:   "original-key",
@@ -222,10 +245,6 @@ func TestGamespyPacket_Set(t *testing.T) {
 		packet.Set("new-key", "new-value")
 
 		// THEN
-		assert.Equal(t, map[string]int{
-			"original-key": 0,
-			"new-key":      1,
-		}, packet.keys)
 		assert.Equal(t, []KeyValuePair{
 			{
 				Key:   "original-key",
@@ -241,9 +260,6 @@ func TestGamespyPacket_Set(t *testing.T) {
 	t.Run("updates existing key", func(t *testing.T) {
 		// GIVEN
 		packet := &Packet{
-			keys: map[string]int{
-				"original-key": 0,
-			},
 			elements: []KeyValuePair{
 				{
 					Key:   "original-key",
@@ -256,9 +272,6 @@ func TestGamespyPacket_Set(t *testing.T) {
 		packet.Set("original-key", "new-value")
 
 		// THEN
-		assert.Equal(t, map[string]int{
-			"original-key": 0,
-		}, packet.keys)
 		assert.Equal(t, []KeyValuePair{
 			{
 				Key:   "original-key",
@@ -268,13 +281,39 @@ func TestGamespyPacket_Set(t *testing.T) {
 	})
 }
 
+func TestGamespyPacket_Add(t *testing.T) {
+	t.Run("adds duplicate key", func(t *testing.T) {
+		// GIVEN
+		packet := &Packet{
+			elements: []KeyValuePair{
+				{
+					Key:   "key",
+					Value: "a-value",
+				},
+			},
+		}
+
+		// WHEN
+		packet.Add("key", "b-value")
+
+		// THEN
+		assert.Equal(t, []KeyValuePair{
+			{
+				Key:   "key",
+				Value: "a-value",
+			},
+			{
+				Key:   "key",
+				Value: "b-value",
+			},
+		}, packet.elements)
+	})
+}
+
 func TestGamespyPacket_Lookup(t *testing.T) {
 	const key = "key"
 	const value = "value"
 	packet := &Packet{
-		keys: map[string]int{
-			key: 0,
-		},
 		elements: []KeyValuePair{
 			{
 				Key:   key,
@@ -306,9 +345,6 @@ func TestGamespyPacket_Get(t *testing.T) {
 	const key = "key"
 	const value = "value"
 	packet := &Packet{
-		keys: map[string]int{
-			key: 0,
-		},
 		elements: []KeyValuePair{
 			{
 				Key:   key,
@@ -331,6 +367,50 @@ func TestGamespyPacket_Get(t *testing.T) {
 
 		// THEN
 		assert.Empty(t, actual)
+	})
+}
+
+func TestGamespyPacket_GetAll(t *testing.T) {
+	const key = "key"
+	packet := &Packet{
+		elements: []KeyValuePair{
+			{
+				Key:   key,
+				Value: "a-value",
+			},
+			{
+				Key:   key,
+				Value: "b-value",
+			},
+			{
+				Key:   "other-key",
+				Value: "other-value",
+			},
+		},
+	}
+
+	t.Run("returns multiple values for duplicate key", func(t *testing.T) {
+		// WHEN
+		actual := packet.GetAll(key)
+
+		// THEN
+		assert.Equal(t, []string{"a-value", "b-value"}, actual)
+	})
+
+	t.Run("returns single value for unique key", func(t *testing.T) {
+		// WHEN
+		actual := packet.GetAll("other-key")
+
+		// THEN
+		assert.Equal(t, []string{"other-value"}, actual)
+	})
+
+	t.Run("returns nil for missing key", func(t *testing.T) {
+		// WHEN
+		actual := packet.GetAll("missing")
+
+		// THEN
+		assert.Nil(t, actual)
 	})
 }
 
@@ -373,6 +453,7 @@ func TestGamespyPacket_Map(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// WHEN
+			//goland:noinspection GoDeprecation
 			actual := tt.packet.Map()
 
 			// THEN
