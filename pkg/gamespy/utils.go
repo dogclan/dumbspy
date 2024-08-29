@@ -2,6 +2,7 @@ package gamespy
 
 import (
 	"crypto/md5"
+	"encoding/base64"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -23,6 +24,9 @@ var (
 		FinVal: 0x0,
 		BigEnd: true,
 	}
+
+	// GameSpy-specific base64.Encoding (uses [ instead of +, ] for / and _ instead of = for padding)
+	gamespyEncoding = base64.NewEncoding("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789[]").WithPadding('_')
 )
 
 func ComputeCRC16(p string) uint16 {
@@ -63,4 +67,53 @@ func RandString(n int) string {
 		data[i] = byte(c)
 	}
 	return string(data)
+}
+
+func EncodePassword(pass string) string {
+	encoded := []byte(pass)
+	gspassenc(encoded)
+
+	return gamespyEncoding.EncodeToString(encoded)
+}
+
+func DecodePassword(passenc string) (string, error) {
+	decoded, err := gamespyEncoding.DecodeString(passenc)
+	if err != nil {
+		return "", err
+	}
+
+	gspassenc(decoded)
+
+	return string(decoded), nil
+}
+
+// gspassenc Encodes/decodes the password in place.
+// Adapted from the original implementation by Luigi Auriemma.
+//
+// See https://aluigi.altervista.org/papers/gspassenc.zip
+func gspassenc(pass []byte) {
+	num := int32(0x79707367) // "gspy"
+	for i := range pass {
+		num = gslame(num)
+		pass[i] ^= byte(num % 0xff)
+	}
+}
+
+// gslame Shifts num around. Specifically uses int32 to allow required integer overflows.
+func gslame(num int32) int32 {
+	c := (num >> 16) & 0xffff
+	a := num & 0xffff
+	c *= 0x41a7
+	a *= 0x41a7
+	a += (c & 0x7fff) << 16
+	if a < 0 {
+		a &= 0x7fffffff
+		a++
+	}
+	a += c >> 15
+	if a < 0 {
+		a &= 0x7fffffff
+		a++
+	}
+	return a
 }
