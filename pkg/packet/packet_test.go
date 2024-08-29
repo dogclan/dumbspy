@@ -10,15 +10,15 @@ import (
 func TestFromString(t *testing.T) {
 	type test struct {
 		name            string
-		raw             string
+		bytes           []byte
 		expectedPacket  *GamespyPacket
 		wantErrContains string
 	}
 
 	tests := []test{
 		{
-			name: "parses challenge prompt packet",
-			raw:  "\\lc\\1\\challenge\\TcP1s0FtTB\\id\\1\\final\\",
+			name:  "parses challenge prompt packet",
+			bytes: []byte("\\lc\\1\\challenge\\TcP1s0FtTB\\id\\1\\final\\"),
 			expectedPacket: &GamespyPacket{
 				keys: map[string]int{
 					"lc":        0,
@@ -42,8 +42,8 @@ func TestFromString(t *testing.T) {
 			},
 		},
 		{
-			name: "parses login request packet",
-			raw:  "\\login\\\\challenge\\YJk5UFExKBwn0PEpOpinWHsRCDcfejyJ\\uniquenick\\some-nick\\response\\638ac6fccc7f5a79f25b82132c87572b\\port\\2475\\productid\\10493\\gamename\\battlefield2\\namespaceid\\12\\sdkrevision\\3\\id\\1\\final\\",
+			name:  "parses login request packet",
+			bytes: []byte("\\login\\\\challenge\\YJk5UFExKBwn0PEpOpinWHsRCDcfejyJ\\uniquenick\\some-nick\\response\\638ac6fccc7f5a79f25b82132c87572b\\port\\2475\\productid\\10493\\gamename\\battlefield2\\namespaceid\\12\\sdkrevision\\3\\id\\1\\final\\"),
 			expectedPacket: &GamespyPacket{
 				keys: map[string]int{
 					"login":       0,
@@ -102,8 +102,8 @@ func TestFromString(t *testing.T) {
 			},
 		},
 		{
-			name: "parses login response packet",
-			raw:  "\\lc\\2\\sesskey\\19745\\proof\\8c628092b8ac503e184e68c96d27e758\\userid\\123\\profileid\\456\\uniquenick\\some-nick\\lt\\SIYCIWSEARGXPMEUJRBKKE__\\id\\1\\final\\",
+			name:  "parses login response packet",
+			bytes: []byte("\\lc\\2\\sesskey\\19745\\proof\\8c628092b8ac503e184e68c96d27e758\\userid\\123\\profileid\\456\\uniquenick\\some-nick\\lt\\SIYCIWSEARGXPMEUJRBKKE__\\id\\1\\final\\"),
 			expectedPacket: &GamespyPacket{
 				keys: map[string]int{
 					"lc":         0,
@@ -153,17 +153,17 @@ func TestFromString(t *testing.T) {
 		},
 		{
 			name:            "error for packet not starting with \\",
-			raw:             "key\\value\\final\\",
+			bytes:           []byte("key\\value\\final\\"),
 			wantErrContains: "gamespy packet string is malformed",
 		},
 		{
 			name:            "error for packet not ending with \\final\\",
-			raw:             "\\key\\value",
+			bytes:           []byte("\\key\\value"),
 			wantErrContains: "gamespy packet string is malformed",
 		},
 		{
 			name:            "error for packet containing uneven number of elements",
-			raw:             "\\key\\value\\key-without-value\\final\\",
+			bytes:           []byte("\\key\\value\\key-without-value\\final\\"),
 			wantErrContains: "gamespy packet string contains key without corresponding value",
 		},
 	}
@@ -171,7 +171,7 @@ func TestFromString(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// WHEN
-			packet, err := FromString(tt.raw)
+			packet, err := FromBytes(tt.bytes)
 
 			// THEN
 			if tt.wantErrContains != "" {

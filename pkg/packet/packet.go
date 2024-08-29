@@ -1,9 +1,15 @@
 package packet
 
 import (
+	"bytes"
 	"errors"
-	"fmt"
 	"strings"
+)
+
+const (
+	prefix    = "\\"
+	suffix    = "\\final\\"
+	separator = "\\"
 )
 
 type KeyValuePair struct {
@@ -11,7 +17,7 @@ type KeyValuePair struct {
 }
 
 func (p *KeyValuePair) String() string {
-	return fmt.Sprintf("%s\\%s", p.Key, p.Value)
+	return p.Key + separator + p.Value
 }
 
 type GamespyPacket struct {
@@ -34,19 +40,24 @@ func NewGamespyPacket(elements ...KeyValuePair) *GamespyPacket {
 	}
 }
 
+// Deprecated: Use FromBytes instead.
 func FromString(raw string) (*GamespyPacket, error) {
-	if !strings.HasPrefix(raw, "\\") || !strings.HasSuffix(raw, "\\final\\") {
+	return FromBytes([]byte(raw))
+}
+
+func FromBytes(b []byte) (*GamespyPacket, error) {
+	if !bytes.HasPrefix(b, []byte(prefix)) || !bytes.HasSuffix(b, []byte(suffix)) {
 		return nil, errors.New("gamespy packet string is malformed")
 	}
 
-	elements := strings.Split(raw[1:len(raw)-7], "\\")
+	elements := bytes.Split(b[1:len(b)-7], []byte(separator))
 	if len(elements)%2 != 0 {
 		return nil, errors.New("gamespy packet string contains key without corresponding value")
 	}
 
 	packet := NewGamespyPacket()
 	for i := 0; i < len(elements); i += 2 {
-		packet.Set(elements[i], elements[i+1])
+		packet.Set(string(elements[i]), string(elements[i+1]))
 	}
 	return packet, nil
 }
@@ -75,7 +86,7 @@ func (p *GamespyPacket) String() string {
 	for i, element := range p.elements {
 		elements[i] = element.String()
 	}
-	return fmt.Sprintf("\\%s\\final\\", strings.Join(elements, "\\"))
+	return prefix + strings.Join(elements, separator) + suffix
 }
 
 func (p *GamespyPacket) Bytes() []byte {

@@ -150,7 +150,7 @@ func handleRequest(conn net.Conn) {
 		Bytes(logKeyData, buffer[:n]).
 		Str(logKeyRemote, remoteAddr).
 		Msg("Received login request")
-	req, err := packet.FromString(string(buffer[:n]))
+	req, err := packet.FromBytes(buffer[:n])
 	if err != nil {
 		log.Error().
 			Err(err).
