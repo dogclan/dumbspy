@@ -13,7 +13,7 @@ import (
 
 	"github.com/dogclan/dumbspy/cmd/dumbspy/internal/options"
 	"github.com/dogclan/dumbspy/internal"
-	"github.com/dogclan/dumbspy/pkg/packet"
+	"github.com/dogclan/dumbspy/pkg/gamespy"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -104,8 +104,8 @@ func handleRequest(conn net.Conn) {
 		return
 	}
 
-	challenge := internal.RandString(10)
-	prompt := new(packet.GamespyPacket)
+	challenge := gamespy.RandString(10)
+	prompt := new(gamespy.Packet)
 	prompt.Set("lc", "1")
 	prompt.Set("challenge", challenge)
 	prompt.Set("id", "1")
@@ -150,7 +150,7 @@ func handleRequest(conn net.Conn) {
 		Bytes(logKeyData, buffer[:n]).
 		Str(logKeyRemote, remoteAddr).
 		Msg("Received login request")
-	req, err := packet.FromBytes(buffer[:n])
+	req, err := gamespy.NewPacketFromBytes(buffer[:n])
 	if err != nil {
 		log.Error().
 			Err(err).
@@ -159,7 +159,7 @@ func handleRequest(conn net.Conn) {
 		return
 	}
 
-	res := new(packet.GamespyPacket)
+	res := new(gamespy.Packet)
 	login := internal.NewGamespyLoginRequest(req)
 	if err = login.Validate(); err != nil {
 		log.Error().
@@ -186,8 +186,8 @@ func handleRequest(conn net.Conn) {
 			login.SDKRevision,
 		)
 		res.Set("lc", "2")
-		res.Set("sesskey", internal.ComputeCRC16Str(login.UniqueNick))
-		res.Set("proof", internal.GenerateProof(
+		res.Set("sesskey", strconv.Itoa(int(gamespy.ComputeCRC16(login.UniqueNick))))
+		res.Set("proof", gamespy.GenerateProof(
 			login.UniqueNick,
 			login.Response,
 			challenge,
@@ -196,7 +196,7 @@ func handleRequest(conn net.Conn) {
 		res.Set("userid", strconv.Itoa(playerID))
 		res.Set("profileid", strconv.Itoa(playerID))
 		res.Set("uniquenick", login.UniqueNick)
-		res.Set("lt", fmt.Sprintf("%s__", internal.RandString(22)))
+		res.Set("lt", fmt.Sprintf("%s__", gamespy.RandString(22)))
 		res.Set("id", "1")
 
 		log.Debug().
