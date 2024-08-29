@@ -70,7 +70,12 @@ func (p *Packet) Set(key string, value string) {
 		p.elements[i].Value = value
 	} else {
 		p.elements = append(p.elements, KeyValuePair{Key: key, Value: value})
-		p.keys[key] = len(p.elements) - 1
+		i = len(p.elements) - 1
+		if p.keys == nil {
+			p.keys = map[string]int{key: i}
+		} else {
+			p.keys[key] = i
+		}
 	}
 }
 

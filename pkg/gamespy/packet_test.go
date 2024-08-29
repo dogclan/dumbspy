@@ -185,6 +185,25 @@ func TestFromBytes(t *testing.T) {
 }
 
 func TestGamespyPacket_Set(t *testing.T) {
+	t.Run("adds initial key", func(t *testing.T) {
+		// GIVEN
+		packet := new(Packet)
+
+		// WHEN
+		packet.Set("initial-key", "initial-value")
+
+		// THEN
+		assert.Equal(t, map[string]int{
+			"initial-key": 0,
+		}, packet.keys)
+		assert.Equal(t, []KeyValuePair{
+			{
+				Key:   "initial-key",
+				Value: "initial-value",
+			},
+		}, packet.elements)
+	})
+
 	t.Run("adds new key", func(t *testing.T) {
 		// GIVEN
 		packet := &Packet{
