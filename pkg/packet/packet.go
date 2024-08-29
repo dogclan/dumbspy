@@ -88,7 +88,7 @@ func (p *GamespyPacket) Get(key string) string {
 }
 
 func (p *GamespyPacket) Map() map[string]string {
-	elements := map[string]string{}
+	elements := make(map[string]string, len(p.elements))
 	for _, element := range p.elements {
 		elements[element.Key] = element.Value
 	}
