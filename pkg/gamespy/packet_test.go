@@ -1,4 +1,4 @@
-package packet
+package gamespy
 
 import (
 	"testing"
@@ -11,7 +11,7 @@ func TestFromBytes(t *testing.T) {
 	type test struct {
 		name            string
 		bytes           []byte
-		expectedPacket  *GamespyPacket
+		expectedPacket  *Packet
 		wantErrContains string
 	}
 
@@ -19,7 +19,7 @@ func TestFromBytes(t *testing.T) {
 		{
 			name:  "parses challenge prompt packet",
 			bytes: []byte("\\lc\\1\\challenge\\TcP1s0FtTB\\id\\1\\final\\"),
-			expectedPacket: &GamespyPacket{
+			expectedPacket: &Packet{
 				keys: map[string]int{
 					"lc":        0,
 					"challenge": 1,
@@ -44,7 +44,7 @@ func TestFromBytes(t *testing.T) {
 		{
 			name:  "parses login request packet",
 			bytes: []byte("\\login\\\\challenge\\YJk5UFExKBwn0PEpOpinWHsRCDcfejyJ\\uniquenick\\some-nick\\response\\638ac6fccc7f5a79f25b82132c87572b\\port\\2475\\productid\\10493\\gamename\\battlefield2\\namespaceid\\12\\sdkrevision\\3\\id\\1\\final\\"),
-			expectedPacket: &GamespyPacket{
+			expectedPacket: &Packet{
 				keys: map[string]int{
 					"login":       0,
 					"challenge":   1,
@@ -104,7 +104,7 @@ func TestFromBytes(t *testing.T) {
 		{
 			name:  "parses login response packet",
 			bytes: []byte("\\lc\\2\\sesskey\\19745\\proof\\8c628092b8ac503e184e68c96d27e758\\userid\\123\\profileid\\456\\uniquenick\\some-nick\\lt\\SIYCIWSEARGXPMEUJRBKKE__\\id\\1\\final\\"),
-			expectedPacket: &GamespyPacket{
+			expectedPacket: &Packet{
 				keys: map[string]int{
 					"lc":         0,
 					"sesskey":    1,
@@ -171,7 +171,7 @@ func TestFromBytes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// WHEN
-			packet, err := FromBytes(tt.bytes)
+			packet, err := NewPacketFromBytes(tt.bytes)
 
 			// THEN
 			if tt.wantErrContains != "" {
@@ -187,7 +187,7 @@ func TestFromBytes(t *testing.T) {
 func TestGamespyPacket_Set(t *testing.T) {
 	t.Run("adds new key", func(t *testing.T) {
 		// GIVEN
-		packet := &GamespyPacket{
+		packet := &Packet{
 			keys: map[string]int{
 				"original-key": 0,
 			},
@@ -221,7 +221,7 @@ func TestGamespyPacket_Set(t *testing.T) {
 
 	t.Run("updates existing key", func(t *testing.T) {
 		// GIVEN
-		packet := &GamespyPacket{
+		packet := &Packet{
 			keys: map[string]int{
 				"original-key": 0,
 			},
@@ -252,7 +252,7 @@ func TestGamespyPacket_Set(t *testing.T) {
 func TestGamespyPacket_Lookup(t *testing.T) {
 	const key = "key"
 	const value = "value"
-	packet := &GamespyPacket{
+	packet := &Packet{
 		keys: map[string]int{
 			key: 0,
 		},
@@ -286,7 +286,7 @@ func TestGamespyPacket_Lookup(t *testing.T) {
 func TestGamespyPacket_Get(t *testing.T) {
 	const key = "key"
 	const value = "value"
-	packet := &GamespyPacket{
+	packet := &Packet{
 		keys: map[string]int{
 			key: 0,
 		},
@@ -318,14 +318,14 @@ func TestGamespyPacket_Get(t *testing.T) {
 func TestGamespyPacket_Map(t *testing.T) {
 	type test struct {
 		name        string
-		packet      *GamespyPacket
+		packet      *Packet
 		expectedMap map[string]string
 	}
 
 	tests := []test{
 		{
 			name: "converts packet to map",
-			packet: &GamespyPacket{
+			packet: &Packet{
 				elements: []KeyValuePair{
 					{
 						Key:   "key",
@@ -339,14 +339,14 @@ func TestGamespyPacket_Map(t *testing.T) {
 		},
 		{
 			name: "converts empty element slice packet to map",
-			packet: &GamespyPacket{
+			packet: &Packet{
 				elements: []KeyValuePair{},
 			},
 			expectedMap: map[string]string{},
 		},
 		{
 			name:        "converts element nil slice packet to map",
-			packet:      &GamespyPacket{},
+			packet:      &Packet{},
 			expectedMap: map[string]string{},
 		},
 	}
@@ -365,14 +365,14 @@ func TestGamespyPacket_Map(t *testing.T) {
 func TestGamespyPacket_Bytes(t *testing.T) {
 	type test struct {
 		name          string
-		packet        *GamespyPacket
+		packet        *Packet
 		expectedBytes []byte
 	}
 
 	tests := []test{
 		{
 			name: "converts packet to string",
-			packet: &GamespyPacket{
+			packet: &Packet{
 				elements: []KeyValuePair{
 					{
 						Key:   "key",
@@ -384,14 +384,14 @@ func TestGamespyPacket_Bytes(t *testing.T) {
 		},
 		{
 			name: "converts empty element slice packet to string",
-			packet: &GamespyPacket{
+			packet: &Packet{
 				elements: []KeyValuePair{},
 			},
 			expectedBytes: []byte("\\\\final\\"),
 		},
 		{
 			name:          "converts element nil slice packet to string",
-			packet:        &GamespyPacket{},
+			packet:        &Packet{},
 			expectedBytes: []byte("\\\\final\\"),
 		},
 	}

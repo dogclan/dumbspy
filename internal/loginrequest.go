@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"github.com/dogclan/dumbspy/pkg/packet"
+	"github.com/dogclan/dumbspy/pkg/gamespy"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -19,7 +19,7 @@ type GamespyLoginRequest struct {
 	ID          string  `validate:"numeric,required"`
 }
 
-func NewGamespyLoginRequest(packet *packet.GamespyPacket) *GamespyLoginRequest {
+func NewGamespyLoginRequest(packet *gamespy.Packet) *GamespyLoginRequest {
 	data := packet.Map()
 	return &GamespyLoginRequest{
 		Login:       Pointer[string](data["login"]),
