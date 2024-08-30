@@ -98,14 +98,6 @@ func handleRequest(conn net.Conn) {
 		}
 	}(conn)
 
-	if err := conn.SetReadDeadline(time.Now().Add(time.Second)); err != nil {
-		log.Error().
-			Err(err).
-			Str(logKeyRemote, remoteAddr).
-			Msg("Failed to set read deadline")
-		return
-	}
-
 	challenge := gamespy.RandString(10)
 	prompt := new(gamespy.Packet)
 	prompt.Add("lc", "1")
@@ -116,7 +108,7 @@ func handleRequest(conn net.Conn) {
 		Bytes(logKeyData, prompt.Bytes()).
 		Str(logKeyRemote, remoteAddr).
 		Msg("Sending challenge prompt")
-	if _, err := conn.Write(prompt.Bytes()); err != nil {
+	if err := write(conn, prompt); err != nil {
 		log.Error().
 			Err(err).
 			Str(logKeyRemote, remoteAddr).
@@ -127,8 +119,7 @@ func handleRequest(conn net.Conn) {
 	log.Debug().
 		Str(logKeyRemote, remoteAddr).
 		Msg("Reading login request")
-	buffer := make([]byte, 512)
-	n, err := conn.Read(buffer)
+	req, err := read(conn)
 	if err != nil {
 		// EOF and timeout errors are not of interest => only log to debug
 		if errors.Is(err, io.EOF) || errors.Is(err, syscall.ECONNRESET) {
@@ -149,17 +140,9 @@ func handleRequest(conn net.Conn) {
 	}
 
 	log.Debug().
-		Bytes(logKeyData, buffer[:n]).
+		Bytes(logKeyData, req.Bytes()).
 		Str(logKeyRemote, remoteAddr).
 		Msg("Received login request")
-	req, err := gamespy.NewPacketFromBytes(buffer[:n])
-	if err != nil {
-		log.Error().
-			Err(err).
-			Str(logKeyRemote, remoteAddr).
-			Msg("Failed to parse login request packet")
-		return
-	}
 
 	res := new(gamespy.Packet)
 	login := internal.NewGamespyLoginRequestFromPacket(req)
@@ -207,10 +190,39 @@ func handleRequest(conn net.Conn) {
 			Msg("Sending login response")
 	}
 
-	if _, err = conn.Write(res.Bytes()); err != nil {
+	if err = write(conn, res); err != nil {
 		log.Error().
 			Err(err).
 			Str(logKeyRemote, remoteAddr).
 			Msg("Failed to send response")
 	}
+}
+
+func write(conn net.Conn, packet *gamespy.Packet) error {
+	if err := conn.SetWriteDeadline(time.Now().Add(time.Second)); err != nil {
+		return fmt.Errorf("failed to set write deadline: %w", err)
+	}
+
+	if _, err := conn.Write(packet.Bytes()); err != nil {
+		return fmt.Errorf("failed to write packet: %w", err)
+	}
+	return nil
+}
+
+func read(conn net.Conn) (*gamespy.Packet, error) {
+	if err := conn.SetReadDeadline(time.Now().Add(time.Second)); err != nil {
+		return nil, fmt.Errorf("failed to set read deadline: %w", err)
+	}
+
+	buffer := make([]byte, 512)
+	n, err := conn.Read(buffer)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read packet: %w", err)
+	}
+
+	packet, err := gamespy.NewPacketFromBytes(buffer[:n])
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse packet: %w", err)
+	}
+	return packet, nil
 }
