@@ -6,7 +6,7 @@ require (
 	github.com/go-playground/validator/v10 v10.22.0
 	github.com/npat-efault/crc16 v0.0.0-20161013170008-4128ccbe47c3
 	github.com/rs/zerolog v1.33.0
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.11.1
 )
 
 require (
