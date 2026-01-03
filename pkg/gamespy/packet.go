@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"iter"
 	"reflect"
 	"strconv"
 	"strings"
@@ -135,6 +136,17 @@ func (p *Packet) Remove(key string) {
 func (p *Packet) Do(f func(element KeyValuePair)) {
 	for _, element := range p.elements {
 		f(element)
+	}
+}
+
+// All returns an iterator over the packet's key value pairs
+func (p *Packet) All() iter.Seq[KeyValuePair] {
+	return func(yield func(KeyValuePair) bool) {
+		for _, element := range p.elements {
+			if !yield(element) {
+				return
+			}
+		}
 	}
 }
 
