@@ -24,7 +24,7 @@ RUN go build -v \
     -ldflags="-X 'main.buildTime=$build_time' -X 'main.buildCommit=$build_commit_sha' -X 'main.buildVersion=$build_version'" \
     /app/src/cmd/dumbspy
 
-FROM gcr.io/distroless/base-debian11
+FROM gcr.io/distroless/base-debian13
 
 WORKDIR /
 
