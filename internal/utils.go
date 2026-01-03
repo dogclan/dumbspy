@@ -37,7 +37,7 @@ func GetPlayerID(nick, productID, gameName, namespaceID, sdkRevision string) int
 			Str("identifier", identifier).
 			Msg("Player identifier mismatch, assigning random player id")
 
-		// A *different* random player id will be assigned for each collision with the same identifier. A player who's
+		// A *different* random player id will be assigned for each collision with the same identifier. A player whose
 		// identifier is colliding will thus receive a different player id each time they log in. However, collisions
 		// should be rare in reality and the id is unique for the running duration of the dumbspy process.
 		for ok {
