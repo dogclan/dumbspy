@@ -60,4 +60,4 @@ jobs:
             ${{ runner.os }}-go-${{ matrix.go-version-file }}-
 
       - name: Run tests
-        run: go test ./... --tags unit
+        run: go test ./...
