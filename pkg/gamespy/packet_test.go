@@ -419,8 +419,10 @@ func TestPacket_Bind(t *testing.T) {
 		t.Run("binds packet data", func(t *testing.T) {
 			// GIVEN
 			type s struct {
-				String string `gamespy:"string"`
-				Int    int    `gamespy:"int"`
+				String        string  `gamespy:"string"`
+				StringPointer *string `gamespy:"string-pointer"`
+				Int           int     `gamespy:"int"`
+				IntPointer    *int    `gamespy:"int-pointer"`
 			}
 			packet := &Packet{
 				elements: []KeyValuePair{
@@ -429,8 +431,16 @@ func TestPacket_Bind(t *testing.T) {
 						Value: "some-value",
 					},
 					{
+						Key:   "string-pointer",
+						Value: "other-value",
+					},
+					{
 						Key:   "int",
 						Value: "1",
+					},
+					{
+						Key:   "int-pointer",
+						Value: "2",
 					},
 				},
 			}
@@ -442,8 +452,10 @@ func TestPacket_Bind(t *testing.T) {
 			// THEN
 			require.NoError(t, err)
 			assert.Equal(t, &s{
-				String: "some-value",
-				Int:    1,
+				String:        "some-value",
+				StringPointer: toPointer("other-value"),
+				Int:           1,
+				IntPointer:    toPointer(2),
 			}, actual)
 		})
 
@@ -611,8 +623,10 @@ func TestPacket_Bind(t *testing.T) {
 		t.Run("binds packet data", func(t *testing.T) {
 			// GIVEN
 			type s struct {
-				String string `gamespy:"string"`
-				Int    int    `gamespy:"int"`
+				String        string  `gamespy:"string"`
+				StringPointer *string `gamespy:"string-pointer"`
+				Int           int     `gamespy:"int"`
+				IntPointer    *int    `gamespy:"int-pointer"`
 			}
 			packet := &Packet{
 				elements: []KeyValuePair{
@@ -621,16 +635,32 @@ func TestPacket_Bind(t *testing.T) {
 						Value: "first-value",
 					},
 					{
+						Key:   "string-pointer",
+						Value: "first-pointer-value",
+					},
+					{
 						Key:   "int",
 						Value: "1",
+					},
+					{
+						Key:   "int-pointer",
+						Value: "2",
 					},
 					{
 						Key:   "string",
 						Value: "second-value",
 					},
 					{
+						Key:   "string-pointer",
+						Value: "second-pointer-value",
+					},
+					{
 						Key:   "int",
-						Value: "2",
+						Value: "3",
+					},
+					{
+						Key:   "int-pointer",
+						Value: "4",
 					},
 				},
 			}
@@ -643,12 +673,16 @@ func TestPacket_Bind(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, []s{
 				{
-					String: "first-value",
-					Int:    1,
+					String:        "first-value",
+					StringPointer: toPointer("first-pointer-value"),
+					Int:           1,
+					IntPointer:    toPointer(2),
 				},
 				{
-					String: "second-value",
-					Int:    2,
+					String:        "second-value",
+					StringPointer: toPointer("second-pointer-value"),
+					Int:           3,
+					IntPointer:    toPointer(4),
 				},
 			}, actual)
 		})
@@ -920,4 +954,8 @@ func TestGamespyPacket_Bytes(t *testing.T) {
 			assert.Equal(t, tt.expectedBytes, actual)
 		})
 	}
+}
+
+func toPointer[T any](v T) *T {
+	return &v
 }

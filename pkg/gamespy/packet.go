@@ -209,17 +209,8 @@ func (p *Packet) bindStruct(v reflect.Value) error {
 		}
 		value := values[len(values)-1]
 
-		switch field.Kind() {
-		case reflect.Int, reflect.Int32, reflect.Int64:
-			n, err := strconv.ParseInt(value, 10, 64)
-			if err != nil {
-				return fmt.Errorf("%s.%s: %w", t.Name(), t.Field(i).Name, err)
-			}
-			field.SetInt(n)
-		case reflect.String:
-			field.SetString(value)
-		default:
-			return fmt.Errorf("%s.%s: unsupported field type: %s", t.Name(), t.Field(i).Name, field.Type())
+		if err := setValue(t, i, field, value); err != nil {
+			return err
 		}
 	}
 
@@ -254,27 +245,18 @@ func (p *Packet) bindSlice(v reflect.Value) error {
 		}
 		keys[element.Key] = struct{}{}
 
-		idx, ok := indexes[element.Key]
+		i, ok := indexes[element.Key]
 		if !ok {
 			continue
 		}
 
-		field := current.Field(idx)
+		field := current.Field(i)
 		if !field.CanSet() {
 			continue
 		}
 
-		switch field.Kind() {
-		case reflect.Int, reflect.Int32, reflect.Int64:
-			n, err := strconv.ParseInt(element.Value, 10, 64)
-			if err != nil {
-				return fmt.Errorf("%s.%s: %w", et.Name(), et.Field(idx).Name, err)
-			}
-			field.SetInt(n)
-		case reflect.String:
-			field.SetString(element.Value)
-		default:
-			return fmt.Errorf("%s.%s: unsupported field type: %s", et.Name(), et.Field(idx).Name, field.Type())
+		if err := setValue(et, i, field, element.Value); err != nil {
+			return err
 		}
 	}
 
@@ -282,6 +264,26 @@ func (p *Packet) bindSlice(v reflect.Value) error {
 	// (we only "flush" current to results on the n+1st result)
 	if len(keys) != 0 {
 		v.Set(reflect.Append(v, current))
+	}
+
+	return nil
+}
+
+func setValue(t reflect.Type, i int, v reflect.Value, value string) error {
+	switch v.Kind() {
+	case reflect.Int, reflect.Int32, reflect.Int64:
+		n, err := strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			return fmt.Errorf("%s.%s: %w", t.Name(), t.Field(i).Name, err)
+		}
+		v.SetInt(n)
+	case reflect.String:
+		v.SetString(value)
+	case reflect.Pointer:
+		v.Set(reflect.New(v.Type().Elem()))
+		return setValue(t, i, v.Elem(), value)
+	default:
+		return fmt.Errorf("%s.%s: unsupported field type: %s", t.Name(), t.Field(i).Name, v.Type())
 	}
 
 	return nil
