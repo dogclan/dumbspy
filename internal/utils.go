@@ -49,6 +49,6 @@ func GetPlayerID(nick, productID, gameName, namespaceID, sdkRevision string) int
 	return playerID
 }
 
-func Pointer[T any](p T) *T {
+func ToPointer[T any](p T) *T {
 	return &p
 }

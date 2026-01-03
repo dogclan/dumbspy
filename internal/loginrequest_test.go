@@ -23,7 +23,7 @@ func TestGamespyLoginRequest_Validate(t *testing.T) {
 		{
 			name: "fails for non-zero string login",
 			prepareLoginRequest: func(req *GamespyLoginRequest) {
-				req.Login = Pointer[string]("some-string")
+				req.Login = ToPointer("some-string")
 			},
 			wantErrContains: "validation for 'Login' failed on the 'len' tag",
 		},
@@ -82,7 +82,7 @@ func TestGamespyLoginRequest_Validate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// GIVEN
 			req := &GamespyLoginRequest{
-				Login:       Pointer[string](""),
+				Login:       ToPointer(""),
 				Challenge:   "YJk5UFExKBwn0PEpOpinWHsRCDcfejyJ",
 				UniqueNick:  "some-nick",
 				Response:    "1c5a1eb9e75006ec317bd6d8a2c09969",
