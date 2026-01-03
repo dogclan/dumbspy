@@ -77,8 +77,9 @@ func main() {
 			log.Error().
 				Err(err2).
 				Msg("Failed to accept new connection")
+		} else {
+			go handleRequest(conn)
 		}
-		go handleRequest(conn)
 	}
 }
 
