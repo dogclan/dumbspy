@@ -1,8 +1,6 @@
 package internal
 
 import (
-	"github.com/dogclan/dumbspy/pkg/gamespy"
-
 	"github.com/go-playground/validator/v10"
 )
 
@@ -19,36 +17,7 @@ type GamespyLoginRequest struct {
 	ID          string  `validate:"numeric,required"`
 }
 
-func NewGamespyLoginRequestFromPacket(packet *gamespy.Packet) *GamespyLoginRequest {
-	r := new(GamespyLoginRequest)
-	packet.Do(func(element gamespy.KeyValuePair) {
-		switch element.Key {
-		case "login":
-			r.Login = Pointer(element.Value)
-		case "challenge":
-			r.Challenge = element.Value
-		case "uniquenick":
-			r.UniqueNick = element.Value
-		case "response":
-			r.Response = element.Value
-		case "port":
-			r.Port = element.Value
-		case "productid":
-			r.ProductID = element.Value
-		case "gamename":
-			r.GameName = element.Value
-		case "namespaceid":
-			r.NamespaceID = element.Value
-		case "sdkrevision":
-			r.SDKRevision = element.Value
-		case "id":
-			r.ID = element.Value
-		}
-	})
-	return r
-}
-
-func (r *GamespyLoginRequest) Validate() error {
+func (r GamespyLoginRequest) Validate() error {
 	validate := validator.New()
 	return validate.Struct(r)
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
 	"io"
@@ -145,8 +146,8 @@ func handleRequest(conn net.Conn) {
 		Msg("Received login request")
 
 	res := new(gamespy.Packet)
-	login := internal.NewGamespyLoginRequestFromPacket(req)
-	if err = login.Validate(); err != nil {
+	var login internal.GamespyLoginRequest
+	if err = cmp.Or(req.Bind(&login), login.Validate()); err != nil {
 		log.Error().
 			Err(err).
 			Str(logKeyRemote, remoteAddr).
