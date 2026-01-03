@@ -243,7 +243,6 @@ func (p *Packet) bindSlice(v reflect.Value) error {
 			current = reflect.New(et).Elem()
 			keys = make(map[string]struct{}, len(keys))
 		}
-		keys[element.Key] = struct{}{}
 
 		i, ok := indexes[element.Key]
 		if !ok {
@@ -258,6 +257,10 @@ func (p *Packet) bindSlice(v reflect.Value) error {
 		if err := setValue(et, i, field, element.Value); err != nil {
 			return err
 		}
+
+		// Track seen keys last to avoid adding irrelevant keys
+		// (adding irrelevant keys would cause empty structs to be added to an otherwise empty slice)
+		keys[element.Key] = struct{}{}
 	}
 
 	// Add current result if we found (some) keys, but never found a 2nd result

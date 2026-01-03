@@ -687,6 +687,29 @@ func TestPacket_Bind(t *testing.T) {
 			}, actual)
 		})
 
+		t.Run("leaves slice empty if no relevant keys are found", func(t *testing.T) {
+			// GIVEN
+			type s struct {
+				Field string `gamespy:"field"`
+			}
+			packet := &Packet{
+				elements: []KeyValuePair{
+					{
+						Key:   "some-key",
+						Value: "some-value",
+					},
+				},
+			}
+
+			// WHEN
+			actual := make([]s, 0, 1)
+			err := packet.Bind(&actual)
+
+			// THEN
+			require.NoError(t, err)
+			assert.Empty(t, actual)
+		})
+
 		t.Run("skips field without corresponding value", func(t *testing.T) {
 			// GIVEN
 			type s struct {
