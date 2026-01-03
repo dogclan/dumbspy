@@ -414,6 +414,421 @@ func TestGamespyPacket_GetAll(t *testing.T) {
 	})
 }
 
+func TestPacket_Bind(t *testing.T) {
+	t.Run("struct", func(t *testing.T) {
+		t.Run("binds packet data", func(t *testing.T) {
+			// GIVEN
+			type s struct {
+				String string `gamespy:"string"`
+				Int    int    `gamespy:"int"`
+			}
+			packet := &Packet{
+				elements: []KeyValuePair{
+					{
+						Key:   "string",
+						Value: "some-value",
+					},
+					{
+						Key:   "int",
+						Value: "1",
+					},
+				},
+			}
+
+			// WHEN
+			actual := new(s)
+			err := packet.Bind(actual)
+
+			// THEN
+			require.NoError(t, err)
+			assert.Equal(t, &s{
+				String: "some-value",
+				Int:    1,
+			}, actual)
+		})
+
+		t.Run("binds last value to struct for duplicate keys", func(t *testing.T) {
+			// GIVEN
+			type s struct {
+				Field string `gamespy:"field"`
+			}
+			packet := &Packet{
+				elements: []KeyValuePair{
+					{
+						Key:   "field",
+						Value: "first-value",
+					},
+					{
+						Key:   "field",
+						Value: "second-value",
+					},
+				},
+			}
+
+			// WHEN
+			actual := new(s)
+			err := packet.Bind(actual)
+
+			// THEN
+			require.NoError(t, err)
+			assert.Equal(t, &s{
+				Field: "second-value",
+			}, actual)
+		})
+
+		t.Run("skips field without corresponding value", func(t *testing.T) {
+			// GIVEN
+			type s struct {
+				WithValue    string `gamespy:"with-value"`
+				WithoutValue string `gamespy:"without-value"`
+			}
+			packet := &Packet{
+				elements: []KeyValuePair{
+					{
+						Key:   "with-value",
+						Value: "some-value",
+					},
+				},
+			}
+
+			// WHEN
+			actual := new(s)
+			err := packet.Bind(actual)
+
+			// THEN
+			require.NoError(t, err)
+			assert.Equal(t, &s{
+				WithValue: "some-value",
+			}, actual)
+		})
+
+		t.Run("ignores unexported field", func(t *testing.T) {
+			// GIVEN
+			type s struct {
+				Exported   string `gamespy:"exported"`
+				unexported string `gamespy:"unexported"`
+			}
+			packet := &Packet{
+				elements: []KeyValuePair{
+					{
+						Key:   "exported",
+						Value: "some-value",
+					},
+					{
+						Key:   "unexported",
+						Value: "other-value",
+					},
+				},
+			}
+
+			// WHEN
+			actual := new(s)
+			err := packet.Bind(actual)
+
+			// THEN
+			require.NoError(t, err)
+			assert.Equal(t, &s{
+				Exported: "some-value",
+			}, actual)
+		})
+
+		t.Run("ignores field without tag", func(t *testing.T) {
+			// GIVEN
+			type s struct {
+				WithTag    string `gamespy:"with-tag"`
+				WithoutTag string
+			}
+			packet := &Packet{
+				elements: []KeyValuePair{
+					{
+						Key:   "with-tag",
+						Value: "some-value",
+					},
+					{
+						Key:   "without-tag",
+						Value: "other-value",
+					},
+				},
+			}
+
+			// WHEN
+			actual := new(s)
+			err := packet.Bind(actual)
+
+			// THEN
+			require.NoError(t, err)
+			assert.Equal(t, &s{
+				WithTag: "some-value",
+			}, actual)
+		})
+
+		t.Run("fails for invalid integer value", func(t *testing.T) {
+			// GIVEN
+			type s struct {
+				Field int `gamespy:"field"`
+			}
+			packet := &Packet{
+				elements: []KeyValuePair{
+					{
+						Key:   "field",
+						Value: "a-string",
+					},
+				},
+			}
+
+			// WHEN
+			actual := new(s)
+			err := packet.Bind(actual)
+
+			// THEN
+			require.ErrorContains(t, err, "s.Field: strconv.ParseInt")
+		})
+
+		t.Run("fails for unsupported type field", func(t *testing.T) {
+			// GIVEN
+			type s struct {
+				Field uint8 `gamespy:"field"`
+			}
+			packet := &Packet{
+				elements: []KeyValuePair{
+					{
+						Key:   "field",
+						Value: "0xff",
+					},
+				},
+			}
+
+			// WHEN
+			actual := new(s)
+			err := packet.Bind(actual)
+
+			// THEN
+			require.ErrorContains(t, err, "s.Field: unsupported field type: uint8")
+		})
+	})
+
+	t.Run("slice", func(t *testing.T) {
+		t.Run("binds packet data", func(t *testing.T) {
+			// GIVEN
+			type s struct {
+				String string `gamespy:"string"`
+				Int    int    `gamespy:"int"`
+			}
+			packet := &Packet{
+				elements: []KeyValuePair{
+					{
+						Key:   "string",
+						Value: "first-value",
+					},
+					{
+						Key:   "int",
+						Value: "1",
+					},
+					{
+						Key:   "string",
+						Value: "second-value",
+					},
+					{
+						Key:   "int",
+						Value: "2",
+					},
+				},
+			}
+
+			// WHEN
+			actual := make([]s, 0, 2)
+			err := packet.Bind(&actual)
+
+			// THEN
+			require.NoError(t, err)
+			assert.Equal(t, []s{
+				{
+					String: "first-value",
+					Int:    1,
+				},
+				{
+					String: "second-value",
+					Int:    2,
+				},
+			}, actual)
+		})
+
+		t.Run("skips field without corresponding value", func(t *testing.T) {
+			// GIVEN
+			type s struct {
+				WithValue    string `gamespy:"with-value"`
+				WithoutValue string `gamespy:"without-value"`
+			}
+			packet := &Packet{
+				elements: []KeyValuePair{
+					{
+						Key:   "with-value",
+						Value: "some-value",
+					},
+				},
+			}
+
+			// WHEN
+			actual := make([]s, 0, 1)
+			err := packet.Bind(&actual)
+
+			// THEN
+			require.NoError(t, err)
+			assert.Equal(t, []s{
+				{
+					WithValue: "some-value",
+				},
+			}, actual)
+		})
+
+		t.Run("ignores unexported field", func(t *testing.T) {
+			// GIVEN
+			type s struct {
+				Exported   string `gamespy:"exported"`
+				unexported string `gamespy:"unexported"`
+			}
+			packet := &Packet{
+				elements: []KeyValuePair{
+					{
+						Key:   "exported",
+						Value: "some-value",
+					},
+					{
+						Key:   "unexported",
+						Value: "other-value",
+					},
+				},
+			}
+
+			// WHEN
+			actual := make([]s, 0, 1)
+			err := packet.Bind(&actual)
+
+			// THEN
+			require.NoError(t, err)
+			assert.Equal(t, []s{
+				{
+					Exported: "some-value",
+				},
+			}, actual)
+		})
+
+		t.Run("ignores field without tag", func(t *testing.T) {
+			// GIVEN
+			type s struct {
+				WithTag    string `gamespy:"with-tag"`
+				WithoutTag string
+			}
+			packet := &Packet{
+				elements: []KeyValuePair{
+					{
+						Key:   "with-tag",
+						Value: "some-value",
+					},
+					{
+						Key:   "without-tag",
+						Value: "other-value",
+					},
+				},
+			}
+
+			// WHEN
+			actual := make([]s, 0, 1)
+			err := packet.Bind(&actual)
+
+			// THEN
+			require.NoError(t, err)
+			assert.Equal(t, []s{
+				{
+					WithTag: "some-value",
+				},
+			}, actual)
+		})
+
+		t.Run("fails for invalid integer value", func(t *testing.T) {
+			// GIVEN
+			type s struct {
+				Field int `gamespy:"field"`
+			}
+			packet := &Packet{
+				elements: []KeyValuePair{
+					{
+						Key:   "field",
+						Value: "a-string",
+					},
+				},
+			}
+
+			// WHEN
+			actual := make([]s, 0, 1)
+			err := packet.Bind(&actual)
+
+			// THEN
+			require.ErrorContains(t, err, "s.Field: strconv.ParseInt")
+		})
+	})
+
+	t.Run("fails for non-pointer target", func(t *testing.T) {
+		// GIVEN
+		type s struct {
+			Field string `gamespy:"field"`
+		}
+		packet := &Packet{
+			elements: []KeyValuePair{
+				{
+					Key:   "field",
+					Value: "some-value",
+				},
+			},
+		}
+
+		// WHEN
+		actual := new(s)
+		err := packet.Bind(*actual)
+
+		// THEN
+		require.ErrorContains(t, err, "target must be a non-nil pointer to a struct or struct-slice")
+	})
+
+	t.Run("fails for non-struct-pointer target", func(t *testing.T) {
+		// GIVEN
+		packet := &Packet{
+			elements: []KeyValuePair{
+				{
+					Key:   "field",
+					Value: "some-value",
+				},
+			},
+		}
+
+		// WHEN
+		actual := "not-a-struct"
+		err := packet.Bind(&actual)
+
+		// THEN
+		require.ErrorContains(t, err, "target must be a non-nil pointer to a struct or struct-slice")
+	})
+
+	t.Run("fails for non-struct-slice-pointer target", func(t *testing.T) {
+		// GIVEN
+		packet := &Packet{
+			elements: []KeyValuePair{
+				{
+					Key:   "field",
+					Value: "some-value",
+				},
+			},
+		}
+
+		// WHEN
+		actual := make([]string, 0)
+		err := packet.Bind(&actual)
+
+		// THEN
+		require.ErrorContains(t, err, "target must be a non-nil pointer to a struct or struct-slice")
+	})
+}
+
 func TestGamespyPacket_Map(t *testing.T) {
 	type test struct {
 		name        string

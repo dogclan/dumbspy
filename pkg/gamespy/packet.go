@@ -3,6 +3,8 @@ package gamespy
 import (
 	"bytes"
 	"errors"
+	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 )
@@ -136,6 +138,21 @@ func (p *Packet) Do(f func(element KeyValuePair)) {
 	}
 }
 
+func (p *Packet) Bind(target any) error {
+	v := reflect.ValueOf(target)
+	if v.Kind() != reflect.Ptr || v.IsNil() {
+		return fmt.Errorf("target must be a non-nil pointer to a struct or struct-slice")
+	}
+
+	if v.Elem().Kind() == reflect.Struct {
+		return p.bindStruct(v)
+	} else if v.Elem().Kind() == reflect.Slice && v.Elem().Type().Elem().Kind() == reflect.Struct {
+		return p.bindSlice(v)
+	}
+
+	return fmt.Errorf("target must be a non-nil pointer to a struct or struct-slice")
+}
+
 // Map
 //
 // Deprecated: Packet may contain duplicate keys, which will not be reflected in the map.
@@ -157,4 +174,103 @@ func (p *Packet) String() string {
 
 func (p *Packet) Bytes() []byte {
 	return []byte(p.String())
+}
+
+func (p *Packet) bindStruct(v reflect.Value) error {
+	v = v.Elem()
+	t := v.Type()
+	for i := range t.NumField() {
+		field := v.Field(i)
+		if !field.CanSet() {
+			continue
+		}
+
+		key := t.Field(i).Tag.Get("gamespy")
+		if key == "" {
+			continue
+		}
+
+		// Get all values and use last one to mimic default JSON library behavior
+		values := p.GetAll(key)
+		if len(values) == 0 {
+			continue
+		}
+		value := values[len(values)-1]
+
+		switch field.Kind() {
+		case reflect.Int, reflect.Int32, reflect.Int64:
+			n, err := strconv.ParseInt(value, 10, 64)
+			if err != nil {
+				return fmt.Errorf("%s.%s: %w", t.Name(), t.Field(i).Name, err)
+			}
+			field.SetInt(n)
+		case reflect.String:
+			field.SetString(value)
+		default:
+			return fmt.Errorf("%s.%s: unsupported field type: %s", t.Name(), t.Field(i).Name, field.Type())
+		}
+	}
+
+	return nil
+}
+
+func (p *Packet) bindSlice(v reflect.Value) error {
+	v = v.Elem()
+	t := v.Type()
+	et := t.Elem()
+
+	// Map tags to element type field indexes
+	indexes := make(map[string]int, et.NumField())
+	for i := range et.NumField() {
+		key := et.Field(i).Tag.Get("gamespy")
+		if key == "" {
+			continue
+		}
+
+		indexes[key] = i
+	}
+
+	current := reflect.New(et).Elem()
+	keys := make(map[string]struct{})
+	for _, element := range p.elements {
+		// Start building a new result when we reach a key we saw before
+		_, seen := keys[element.Key]
+		if seen {
+			v.Set(reflect.Append(v, current))
+			current = reflect.New(et).Elem()
+			keys = make(map[string]struct{}, len(keys))
+		}
+		keys[element.Key] = struct{}{}
+
+		idx, ok := indexes[element.Key]
+		if !ok {
+			continue
+		}
+
+		field := current.Field(idx)
+		if !field.CanSet() {
+			continue
+		}
+
+		switch field.Kind() {
+		case reflect.Int, reflect.Int32, reflect.Int64:
+			n, err := strconv.ParseInt(element.Value, 10, 64)
+			if err != nil {
+				return fmt.Errorf("%s.%s: %w", et.Name(), et.Field(idx).Name, err)
+			}
+			field.SetInt(n)
+		case reflect.String:
+			field.SetString(element.Value)
+		default:
+			return fmt.Errorf("%s.%s: unsupported field type: %s", et.Name(), et.Field(idx).Name, field.Type())
+		}
+	}
+
+	// Add current result if we found (some) keys, but never found a 2nd result
+	// (we only "flush" current to results on the n+1st result)
+	if len(keys) != 0 {
+		v.Set(reflect.Append(v, current))
+	}
+
+	return nil
 }
